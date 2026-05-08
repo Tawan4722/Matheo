@@ -1,0 +1,1992 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F7F6F2">
+  <meta name="description" content="Matheo is an offline math workspace with paper-style calculation and graphing.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%23f7f6f2'/%3E%3Cpath d='M34 30h60a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H34a8 8 0 0 1-8-8V38a8 8 0 0 1 8-8Z' fill='%23ffffff' stroke='%231d232a' stroke-width='5'/%3E%3Cpath d='M42 49h44M42 66h44M42 83h18M74 83h12' stroke='%237aa2f7' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+  <title>Matheo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f6f2;
+      --bg-2: #ece8df;
+      --ink: #1d232a;
+      --muted: #65717c;
+      --line: rgba(29, 35, 42, 0.1);
+      --glass-bg: rgba(255, 255, 255, 0.68);
+      --glass-solid: #ffffff;
+      --glass-border: rgba(29, 35, 42, 0.08);
+      --shadow-rest: 0 1px 2px rgba(29, 35, 42, 0.04), 0 10px 30px rgba(29, 35, 42, 0.08);
+      --shadow-hover: 0 2px 4px rgba(29, 35, 42, 0.06), 0 16px 36px rgba(29, 35, 42, 0.1);
+      --shadow-press: inset 0 1px 2px rgba(29, 35, 42, 0.14);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --blue: #4f7ee8;
+      --rose: #d95d76;
+      --green: #5e9446;
+      --amber: #bb7d28;
+      --violet: #8066d6;
+      --cyan: #2a8fb8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      color: var(--ink);
+      font-family: var(--font);
+      background:
+        linear-gradient(140deg, rgba(122, 162, 247, 0.18), transparent 34%),
+        linear-gradient(310deg, rgba(158, 206, 106, 0.16), transparent 32%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    #app {
+      width: min(1180px, 100%);
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      font-weight: 760;
+      line-height: 1;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-bar,
+    .segmented,
+    .install-area {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-rest);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    }
+
+    .tab-bar,
+    .segmented {
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 4px;
+      padding: 4px;
+    }
+
+    .tab,
+    .segmented button,
+    .icon-btn,
+    .key,
+    .command-btn {
+      min-height: 42px;
+      border-radius: var(--radius-sm);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab,
+    .segmented button {
+      min-width: 82px;
+      padding: 0 14px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .tab[aria-selected="true"],
+    .segmented button[aria-pressed="true"] {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.07);
+    }
+
+    .install-area {
+      display: none;
+      min-height: 42px;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    .install-area.is-visible {
+      display: flex;
+    }
+
+    .icon-btn,
+    .command-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.05);
+      font-weight: 720;
+    }
+
+    .icon-btn svg,
+    .command-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.2;
+    }
+
+    .view {
+      display: none;
+      min-height: 0;
+    }
+
+    .view.is-active {
+      display: grid;
+    }
+
+    #calc-view {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .calc-main {
+      display: grid;
+      grid-template-rows: minmax(210px, auto) auto;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .paper-display,
+    .steps-panel,
+    .keypad,
+    .graph-pane,
+    .equation-list,
+    .graph-controls,
+    .test-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-rest);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    }
+
+    .paper-display {
+      min-height: 220px;
+      padding: clamp(16px, 3vw, 26px);
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .expression-row {
+      min-height: 78px;
+      overflow-x: auto;
+      display: flex;
+      align-items: center;
+      padding-bottom: 8px;
+    }
+
+    .placeholder {
+      color: #8b949e;
+      font-size: clamp(1.15rem, 5vw, 2.15rem);
+      font-weight: 650;
+    }
+
+    .raw-input {
+      width: 100%;
+      min-height: 45px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 1rem;
+      resize: none;
+      outline: none;
+    }
+
+    .raw-input:focus {
+      border-color: rgba(79, 126, 232, 0.5);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
+    }
+
+    .result-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .result-line output {
+      color: var(--ink);
+      font-size: clamp(1.5rem, 7vw, 3.1rem);
+      font-weight: 780;
+      line-height: 1;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .math-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-width: max-content;
+    }
+
+    .cell,
+    .op-cell {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      min-height: 34px;
+      padding: 4px 8px;
+      border: 1px solid rgba(29, 35, 42, 0.08);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.64);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.04);
+      font-weight: 720;
+      line-height: 1;
+    }
+
+    .op-cell {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .func-name {
+      min-width: 42px;
+      color: var(--rose);
+      background: rgba(217, 93, 118, 0.1);
+      border-color: rgba(217, 93, 118, 0.2);
+      text-transform: none;
+    }
+
+    .frac {
+      display: inline-grid;
+      grid-template-rows: auto 1px auto;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px;
+    }
+
+    .frac-rule {
+      height: 1px;
+      background: var(--ink);
+      opacity: 0.75;
+    }
+
+    .pow {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 1px;
+    }
+
+    .sup {
+      transform: translateY(-0.48em);
+      font-size: 0.65em;
+    }
+
+    .root {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 0;
+    }
+
+    .radical {
+      width: 22px;
+      height: 38px;
+      align-self: stretch;
+    }
+
+    .radicand {
+      border-top: 2px solid rgba(29, 35, 42, 0.8);
+      padding-top: 4px;
+    }
+
+    .abs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .abs::before,
+    .abs::after {
+      content: "";
+      width: 2px;
+      min-height: 38px;
+      background: rgba(29, 35, 42, 0.76);
+      border-radius: 999px;
+    }
+
+    .steps-panel {
+      min-height: 150px;
+      max-height: 360px;
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 0.98rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .panel-title span {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .step {
+      display: grid;
+      gap: 8px;
+      padding: 11px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .step:first-of-type {
+      border-top: 0;
+    }
+
+    .step-rule {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 720;
+    }
+
+    .step-math {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .step-math .math-row {
+      transform-origin: left center;
+      font-size: 0.82rem;
+    }
+
+    .keypad {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .keypad-wrap {
+      position: relative;
+    }
+
+    .keypad-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .key {
+      min-width: 0;
+      min-height: 52px;
+      padding: 0 6px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.04);
+      font-size: clamp(0.92rem, 3.7vw, 1.06rem);
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .key.operator {
+      color: var(--blue);
+      background: rgba(255, 255, 255, 0.86);
+    }
+
+    .key.action {
+      color: #fff;
+      background: #1d232a;
+    }
+
+    .key.function {
+      color: var(--rose);
+    }
+
+    .key.constant {
+      color: var(--green);
+    }
+
+    .variable-popover {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      display: none;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+      padding: 10px;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow-hover);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+      z-index: 4;
+    }
+
+    .variable-popover.is-open {
+      display: grid;
+    }
+
+    .variable-popover button {
+      min-height: 38px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .key:hover,
+    .icon-btn:hover,
+    .command-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .key:active,
+    .icon-btn:active,
+    .command-btn:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-press);
+    }
+
+    #graph-view {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .equation-list {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .equation-row {
+      display: grid;
+      grid-template-columns: 14px 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 34px;
+      border-radius: 999px;
+    }
+
+    .equation-row input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.76);
+      outline: none;
+      font-family: var(--mono);
+    }
+
+    .graph-pane {
+      min-height: min(68svh, 620px);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      overflow: hidden;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 360px;
+      background:
+        linear-gradient(rgba(29, 35, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(29, 35, 42, 0.035) 1px, transparent 1px),
+        rgba(255, 255, 255, 0.48);
+      background-size: 36px 36px;
+      touch-action: none;
+    }
+
+    #plot {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-hint {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.82rem;
+      pointer-events: none;
+    }
+
+    .graph-controls {
+      border-width: 1px 0 0;
+      border-radius: 0;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.56);
+    }
+
+    .viewport-readout {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+    }
+
+    .test-panel {
+      display: none;
+      padding: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+    }
+
+    .test-panel.is-visible {
+      display: block;
+    }
+
+    .error {
+      color: var(--rose);
+    }
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .tab-bar,
+      .segmented,
+      .install-area,
+      .paper-display,
+      .steps-panel,
+      .keypad,
+      .graph-pane,
+      .equation-list,
+      .graph-controls,
+      .test-panel {
+        background: var(--glass-solid);
+      }
+    }
+
+    @media (min-width: 720px) {
+      #calc-view {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+        align-items: start;
+      }
+
+      .steps-panel {
+        position: sticky;
+        top: 16px;
+        max-height: calc(100svh - 132px);
+      }
+
+      #graph-view {
+        grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .tab-bar,
+      .install-area {
+        width: 100%;
+      }
+
+      .tab-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .key-grid {
+        gap: 7px;
+      }
+
+      .keypad-head .segmented {
+        width: 100%;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .segmented button {
+        min-width: 0;
+        padding: 0 4px;
+        font-size: 0.88rem;
+      }
+
+      .key {
+        min-height: 49px;
+      }
+
+      .result-line {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .result-line output {
+        text-align: left;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Matheo</h1>
+        <p>Offline paper math and graphing</p>
+      </div>
+      <nav class="tab-bar" aria-label="Views">
+        <button class="tab" type="button" data-tab="calc" aria-selected="true">Calc</button>
+        <button class="tab" type="button" data-tab="graph" aria-selected="false">Graph</button>
+      </nav>
+      <div class="install-area" id="install-area">
+        <button class="icon-btn" type="button" id="install-button" title="Install app" aria-label="Install app">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 19h14"/></svg>
+          Install
+        </button>
+      </div>
+    </header>
+
+    <section class="view is-active" id="calc-view" aria-label="Matheo calculator">
+      <div class="calc-main">
+        <section class="paper-display" aria-label="Expression display">
+          <div class="expression-row" id="paper-output">
+            <div class="placeholder">Tap keys or type an expression</div>
+          </div>
+          <textarea class="raw-input" id="expression-input" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off" inputmode="text" aria-label="Expression input" placeholder="Example: (3/4 + sqrt(16))^2"></textarea>
+          <div class="result-line">
+            <span id="status-line">Ready</span>
+            <output id="result-output" aria-live="polite">0</output>
+          </div>
+        </section>
+
+        <section class="keypad" aria-label="Keypad">
+          <div class="keypad-head">
+            <div class="segmented" aria-label="Keypad layer">
+              <button type="button" data-layer="basic" aria-pressed="true">Basic</button>
+              <button type="button" data-layer="intermediate" aria-pressed="false">More</button>
+              <button type="button" data-layer="advanced" aria-pressed="false">Advanced</button>
+              <button type="button" data-layer="symbols" aria-pressed="false">Symbols</button>
+            </div>
+            <button class="command-btn" type="button" id="copy-result" title="Copy result">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="2"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></svg>
+              Copy
+            </button>
+          </div>
+          <div class="keypad-wrap">
+            <div class="key-grid" id="key-grid"></div>
+            <div class="variable-popover" id="variable-popover" aria-label="Variable picker"></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="steps-panel" aria-label="Simplification steps">
+        <div class="panel-title">
+          <h2>Steps</h2>
+          <span id="step-count">0</span>
+        </div>
+        <div id="steps-output">
+          <div class="step-rule">No simplification steps yet.</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="view" id="graph-view" aria-label="Graph">
+      <aside class="equation-list">
+        <div class="panel-title">
+          <h2>Equations</h2>
+          <button class="icon-btn" type="button" id="add-equation" title="Add equation" aria-label="Add equation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          </button>
+        </div>
+        <div id="equations"></div>
+      </aside>
+
+      <section class="graph-pane">
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas id="plot" aria-label="Function plot"></canvas>
+          <div class="graph-hint">Drag to pan. Wheel or pinch to zoom.</div>
+        </div>
+        <div class="graph-controls">
+          <div class="viewport-readout" id="viewport-readout"></div>
+          <div>
+            <button class="command-btn" type="button" id="fit-graph">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+              Reset
+            </button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <pre class="test-panel" id="test-panel" aria-live="polite"></pre>
+  </main>
+
+  <script type="module">
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+    const formatNumber = value => {
+      if (typeof value === 'bigint') return value.toString();
+      if (!Number.isFinite(value)) return String(value);
+      if (Math.abs(value) < 1e-12) return '0';
+      if (Math.abs(value) >= 1e9 || Math.abs(value) < 1e-6) return value.toExponential(8).replace(/0+e/, 'e');
+      return Number(value.toPrecision(12)).toString();
+    };
+
+    const gcd = (a, b) => {
+      a = Math.abs(Math.trunc(a));
+      b = Math.abs(Math.trunc(b));
+      while (b) [a, b] = [b, a % b];
+      return a || 1;
+    };
+
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const astText = ast => Renderer.toText(ast);
+    const normalizeMathInput = input => input
+      .replace(/[−–—]/g, '-')
+      .replace(/[×·∙⋅]/g, '*')
+      .replace(/[÷]/g, '/')
+      .replace(/√/g, 'sqrt')
+      .replace(/π/g, 'pi')
+      .replace(/θ/g, 't')
+      .replace(/φ/g, 'p')
+      .replace(/α/g, 'a')
+      .replace(/β/g, 'b')
+      .replace(/γ/g, 'g')
+      .replace(/δ/g, 'd')
+      .replace(/λ/g, 'l')
+      .replace(/μ/g, 'm')
+      .replace(/σ/g, 's')
+      .replace(/ω/g, 'w')
+      .replace(/∞/g, 'Infinity')
+      .replace(/²/g, '^2')
+      .replace(/³/g, '^3');
+    const graphExpressionOf = expression => normalizeMathInput(expression.trim()).replace(/^y\s*=\s*/i, '');
+    const isGraphExpression = expression => {
+      const normalized = normalizeMathInput(expression.trim());
+      return /^y\s*=/.test(normalized) || /\bx\b/.test(normalized);
+    };
+
+    const Store = (() => {
+      const state = {
+        tab: 'calc',
+        expression: '',
+        ast: null,
+        simplified: null,
+        steps: [],
+        value: 0,
+        error: '',
+        layer: 'basic',
+        calcGraphId: crypto.randomUUID(),
+        equations: [
+          { id: crypto.randomUUID(), expr: 'sin(x)', color: '#4f7ee8' },
+          { id: crypto.randomUUID(), expr: 'x^2/4 - 2', color: '#d95d76' }
+        ],
+        viewport: { xMin: -10, xMax: 10, yMin: -7, yMax: 7 }
+      };
+      const subscribers = new Map();
+      const notify = key => (subscribers.get(key) || new Set()).forEach(fn => fn(state[key], state));
+      return {
+        get: key => state[key],
+        snapshot: () => state,
+        set(key, value) {
+          state[key] = value;
+          notify(key);
+        },
+        patch(patch) {
+          Object.assign(state, patch);
+          Object.keys(patch).forEach(notify);
+        },
+        subscribe(key, fn) {
+          if (!subscribers.has(key)) subscribers.set(key, new Set());
+          subscribers.get(key).add(fn);
+          fn(state[key], state);
+          return () => subscribers.get(key).delete(fn);
+        }
+      };
+    })();
+
+    const Lexer = (() => {
+      const names = new Set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'sqrt', 'root', 'log', 'ln', 'exp', 'abs', 'floor', 'ceil', 'round', 'min', 'max', 'sum', 'ncr', 'npr']);
+      const orderedNames = [...names].sort((a, b) => b.length - a.length);
+      const constants = new Set(['pi', 'e']);
+      function pushWord(word, out) {
+        let offset = 0;
+        while (offset < word.length) {
+          const rest = word.slice(offset);
+          const fn = orderedNames.find(name => rest.startsWith(name));
+          if (fn) {
+            out.push({ type: 'name', name: fn });
+            offset += fn.length;
+            continue;
+          }
+          if (rest.startsWith('pi')) {
+            out.push({ type: 'const', name: 'pi' });
+            offset += 2;
+            continue;
+          }
+          const char = word[offset];
+          out.push(char === 'e' ? { type: 'const', name: 'e' } : { type: 'var', name: char });
+          offset += 1;
+        }
+      }
+      function tokenize(input) {
+        const src = normalizeMathInput(input).replace(/\s+/g, '');
+        const out = [];
+        let i = 0;
+        while (i < src.length) {
+          const ch = src[i];
+          if (/\d|\./.test(ch)) {
+            let start = i;
+            let dots = 0;
+            while (i < src.length && /[\d.]/.test(src[i])) {
+              if (src[i] === '.') dots += 1;
+              if (dots > 1) throw new Error('Invalid number');
+              i += 1;
+            }
+            out.push({ type: 'number', value: Number(src.slice(start, i)), raw: src.slice(start, i) });
+            continue;
+          }
+          if (/[a-zA-Zπ]/.test(ch)) {
+            let start = i;
+            if (ch === 'π') {
+              i += 1;
+              out.push({ type: 'const', name: 'pi' });
+              continue;
+            }
+            while (i < src.length && /[a-zA-Z]/.test(src[i])) i += 1;
+            const name = src.slice(start, i).toLowerCase();
+            if (name === 'infinity') out.push({ type: 'infinity' });
+            else if (names.has(name)) out.push({ type: 'name', name });
+            else if (constants.has(name)) out.push({ type: 'const', name });
+            else if (name === 'x') out.push({ type: 'var', name: 'x' });
+            else pushWord(name, out);
+            continue;
+          }
+          if ('+-*/^(),!'.includes(ch)) {
+            out.push({ type: ch });
+            i += 1;
+            continue;
+          }
+          throw new Error(`Unexpected character "${ch}"`);
+        }
+        out.push({ type: 'eof' });
+        return out;
+      }
+      return { tokenize };
+    })();
+
+    const Parser = (() => {
+      const infixBp = { '+': [10, 11], '-': [10, 11], '*': [20, 21], '/': [20, 21], '^': [31, 30] };
+      const implicitStarts = new Set(['number', 'var', 'const', 'name', '(']);
+      class ParserImpl {
+        constructor(tokens) {
+          this.tokens = tokens;
+          this.i = 0;
+        }
+        peek() {
+          return this.tokens[this.i] || { type: 'eof' };
+        }
+        eat(type) {
+          const token = this.peek();
+          if (token.type !== type) throw new Error(`Expected "${type}"`);
+          this.i += 1;
+          return token;
+        }
+        parse() {
+          const ast = this.expr(0);
+          if (this.peek().type !== 'eof') throw new Error(`Unexpected token "${this.peek().type}"`);
+          return ast;
+        }
+        expr(minBp) {
+          let left = this.prefix();
+          while (true) {
+            const token = this.peek();
+            if (token.type === '!') {
+              this.i += 1;
+              left = { type: 'factorial', value: left };
+              continue;
+            }
+            if (implicitStarts.has(token.type) && token.type !== 'eof' && token.type !== ')' && token.type !== ',') {
+              const [lbp, rbp] = [24, 25];
+              if (lbp < minBp) break;
+              left = { type: 'bin', op: '*', left, right: this.expr(rbp), implicit: true };
+              continue;
+            }
+            const bp = infixBp[token.type];
+            if (!bp) break;
+            const [lbp, rbp] = bp;
+            if (lbp < minBp) break;
+            this.i += 1;
+            const right = this.expr(rbp);
+            left = token.type === '/' ? { type: 'frac', num: left, den: right } : { type: 'bin', op: token.type, left, right };
+          }
+          return left;
+        }
+        prefix() {
+          const token = this.peek();
+          this.i += 1;
+          if (token.type === 'number') return { type: 'num', value: token.value };
+          if (token.type === 'var') return { type: 'var', name: token.name };
+          if (token.type === 'const') return { type: 'const', name: token.name };
+          if (token.type === 'infinity') return { type: 'infinity' };
+          if (token.type === '+') return { type: 'unary', op: '+', value: this.expr(40) };
+          if (token.type === '-') return { type: 'unary', op: '-', value: this.expr(40) };
+          if (token.type === '(') {
+            const inner = this.expr(0);
+            this.eat(')');
+            return inner;
+          }
+          if (token.type === 'name') {
+            if (this.peek().type === '(') {
+              this.i += 1;
+              const args = [];
+              if (this.peek().type !== ')') {
+                do {
+                  args.push(this.expr(0));
+                  if (this.peek().type !== ',') break;
+                  this.i += 1;
+                } while (true);
+              }
+              this.eat(')');
+              return { type: 'func', name: token.name, args };
+            }
+            return { type: 'func', name: token.name, args: [this.expr(40)] };
+          }
+          throw new Error(`Unexpected token "${token.type}"`);
+        }
+      }
+      function parse(input) {
+        return new ParserImpl(Lexer.tokenize(input)).parse();
+      }
+      return { parse };
+    })();
+
+    const Evaluator = (() => {
+      const factorial = n => {
+        if (!Number.isInteger(n) || n < 0) throw new Error('Factorial needs a non-negative integer');
+        if (n > 170) {
+          let out = 1n;
+          for (let i = 2n; i <= BigInt(n); i += 1n) out *= i;
+          return out;
+        }
+        let out = 1;
+        for (let i = 2; i <= n; i += 1) out *= i;
+        return out;
+      };
+      const choose = (n, r) => {
+        if (![n, r].every(Number.isInteger) || n < 0 || r < 0 || r > n) throw new Error('nCr needs integers with 0 <= r <= n');
+        r = Math.min(r, n - r);
+        let result = 1;
+        for (let i = 1; i <= r; i += 1) result = result * (n - r + i) / i;
+        return result;
+      };
+      const perm = (n, r) => {
+        if (![n, r].every(Number.isInteger) || n < 0 || r < 0 || r > n) throw new Error('nPr needs integers with 0 <= r <= n');
+        let result = 1;
+        for (let i = 0; i < r; i += 1) result *= n - i;
+        return result;
+      };
+      function evalAst(ast, scope = {}) {
+        switch (ast.type) {
+          case 'num': return ast.value;
+          case 'var':
+            if (ast.name in scope) return scope[ast.name];
+            throw new Error(`Missing value for ${ast.name}`);
+          case 'const': return ast.name === 'pi' ? Math.PI : Math.E;
+          case 'infinity': return Infinity;
+          case 'unary': return ast.op === '-' ? -evalAst(ast.value, scope) : evalAst(ast.value, scope);
+          case 'bin': {
+            const a = evalAst(ast.left, scope);
+            const b = evalAst(ast.right, scope);
+            if (typeof a === 'bigint' || typeof b === 'bigint') throw new Error('BigInt cannot be used in decimal operations');
+            if (ast.op === '+') return a + b;
+            if (ast.op === '-') return a - b;
+            if (ast.op === '*') return a * b;
+            if (ast.op === '^') return Math.pow(a, b);
+            throw new Error(`Unsupported operator ${ast.op}`);
+          }
+          case 'frac': {
+            const a = evalAst(ast.num, scope);
+            const b = evalAst(ast.den, scope);
+            if (b === 0) return a >= 0 ? Infinity : -Infinity;
+            return a / b;
+          }
+          case 'factorial': return factorial(evalAst(ast.value, scope));
+          case 'func': {
+            const args = ast.args.map(arg => evalAst(arg, scope));
+            const [a, b] = args;
+            const unary = new Set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'sqrt', 'log', 'ln', 'exp', 'abs', 'floor', 'ceil', 'round']);
+            const binary = new Set(['root', 'ncr', 'npr', 'min', 'max']);
+            if (unary.has(ast.name) && args.length !== 1) throw new Error(`${ast.name} needs one argument`);
+            if (binary.has(ast.name) && args.length !== 2) throw new Error(`${ast.name} needs two arguments`);
+            const fns = {
+              sin: Math.sin, cos: Math.cos, tan: Math.tan,
+              sec: x => 1 / Math.cos(x), csc: x => 1 / Math.sin(x), cot: x => 1 / Math.tan(x),
+              asin: Math.asin, acos: Math.acos, atan: Math.atan,
+              sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+              sqrt: Math.sqrt, ln: Math.log,
+              exp: Math.exp,
+              log: x => Math.log10(x),
+              abs: Math.abs, floor: Math.floor, ceil: Math.ceil, round: Math.round,
+              min: Math.min, max: Math.max,
+              root: (n, x) => Math.pow(x, 1 / n),
+              ncr: choose,
+              npr: perm
+            };
+            if (!fns[ast.name]) throw new Error(`Unsupported function ${ast.name}`);
+            return fns[ast.name](a, b);
+          }
+          default:
+            throw new Error(`Cannot evaluate ${ast.type}`);
+        }
+      }
+      return { evalAst };
+    })();
+
+    const Simplifier = (() => {
+      const isNum = node => node && node.type === 'num' && Number.isFinite(node.value);
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      function withStep(before, after, rule, steps) {
+        if (!same(before, after)) steps.push({ before: clone(before), after: clone(after), rule });
+        return after;
+      }
+      function simplifyNode(node, steps) {
+        const before = clone(node);
+        let next = node;
+        switch (node.type) {
+          case 'unary':
+            next = { ...node, value: simplifyNode(node.value, steps) };
+            if (isNum(next.value)) next = { type: 'num', value: next.op === '-' ? -next.value.value : next.value.value };
+            return withStep(before, next, 'Resolve unary sign', steps);
+          case 'frac': {
+            const num = simplifyNode(node.num, steps);
+            const den = simplifyNode(node.den, steps);
+            next = { type: 'frac', num, den };
+            if (isNum(num) && isNum(den)) {
+              if (Number.isInteger(num.value) && Number.isInteger(den.value) && den.value !== 0) {
+                const g = gcd(num.value, den.value);
+                const sign = den.value < 0 ? -1 : 1;
+                const n = sign * num.value / g;
+                const d = Math.abs(den.value / g);
+                next = d === 1 ? { type: 'num', value: n } : { type: 'frac', num: { type: 'num', value: n }, den: { type: 'num', value: d } };
+                return withStep(before, next, 'Reduce fraction', steps);
+              }
+              next = { type: 'num', value: num.value / den.value };
+              return withStep(before, next, 'Evaluate numeric fraction', steps);
+            }
+            if (isNum(num) && num.value === 0) return withStep(before, { type: 'num', value: 0 }, 'Zero numerator', steps);
+            if (isNum(den) && den.value === 1) return withStep(before, num, 'Divide by one', steps);
+            return withStep(before, next, 'Simplify fraction terms', steps);
+          }
+          case 'bin': {
+            const left = simplifyNode(node.left, steps);
+            const right = simplifyNode(node.right, steps);
+            next = { ...node, left, right };
+            if (isNum(left) && isNum(right)) {
+              next = { type: 'num', value: Evaluator.evalAst(next) };
+              return withStep(before, next, 'Evaluate constant expression', steps);
+            }
+            if (node.op === '+') {
+              if (isNum(left) && left.value === 0) return withStep(before, right, 'Remove additive zero', steps);
+              if (isNum(right) && right.value === 0) return withStep(before, left, 'Remove additive zero', steps);
+              if (same(left, right)) return withStep(before, { type: 'bin', op: '*', left: { type: 'num', value: 2 }, right: left }, 'Combine like terms', steps);
+            }
+            if (node.op === '-') {
+              if (isNum(right) && right.value === 0) return withStep(before, left, 'Remove subtractive zero', steps);
+              if (same(left, right)) return withStep(before, { type: 'num', value: 0 }, 'Cancel equal terms', steps);
+            }
+            if (node.op === '*') {
+              if ((isNum(left) && left.value === 0) || (isNum(right) && right.value === 0)) return withStep(before, { type: 'num', value: 0 }, 'Multiply by zero', steps);
+              if (isNum(left) && left.value === 1) return withStep(before, right, 'Remove multiplicative one', steps);
+              if (isNum(right) && right.value === 1) return withStep(before, left, 'Remove multiplicative one', steps);
+            }
+            if (node.op === '^') {
+              if (isNum(right) && right.value === 1) return withStep(before, left, 'Power of one', steps);
+              if (isNum(right) && right.value === 0) return withStep(before, { type: 'num', value: 1 }, 'Power of zero', steps);
+              if (isNum(left) && left.value === 1) return withStep(before, { type: 'num', value: 1 }, 'One to a power', steps);
+            }
+            return withStep(before, next, 'Simplify operands', steps);
+          }
+          case 'factorial':
+            next = { type: 'factorial', value: simplifyNode(node.value, steps) };
+            if (isNum(next.value) && next.value.value <= 20) next = { type: 'num', value: Evaluator.evalAst(next) };
+            return withStep(before, next, 'Evaluate factorial', steps);
+          case 'func':
+            next = { ...node, args: node.args.map(arg => simplifyNode(arg, steps)) };
+            if (next.args.every(isNum) && !['ncr', 'npr'].includes(next.name)) {
+              const value = Evaluator.evalAst(next);
+              if (Number.isFinite(value)) next = { type: 'num', value };
+              return withStep(before, next, 'Evaluate function constant', steps);
+            }
+            return withStep(before, next, 'Simplify function arguments', steps);
+          default:
+            return node;
+        }
+      }
+      function simplify(ast) {
+        const steps = [];
+        let result = simplifyNode(clone(ast), steps);
+        for (let i = 0; i < 3; i += 1) {
+          const prior = JSON.stringify(result);
+          result = simplifyNode(result, steps);
+          if (JSON.stringify(result) === prior) break;
+        }
+        return { result, steps };
+      }
+      return { simplify };
+    })();
+
+    const Renderer = (() => {
+      const functionNames = new Set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'sqrt', 'root', 'log', 'ln', 'exp', 'abs', 'floor', 'ceil', 'round', 'min', 'max', 'sum', 'ncr', 'npr']);
+      const el = (tag, className, text) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      };
+      const wrap = children => {
+        const row = el('span', 'math-row');
+        children.forEach(child => row.append(child));
+        return row;
+      };
+      function render(ast) {
+        if (!ast) return el('div', 'placeholder', 'Tap keys or type an expression');
+        switch (ast.type) {
+          case 'num': return el('span', 'cell', formatNumber(ast.value));
+          case 'var': return el('span', 'cell', ast.name);
+          case 'const': return el('span', 'cell', ast.name === 'pi' ? 'π' : 'e');
+          case 'infinity': return el('span', 'cell', '∞');
+          case 'unary': return wrap([el('span', 'op-cell', ast.op), render(ast.value)]);
+          case 'bin':
+            if (ast.op === '^') {
+              const pow = el('span', 'pow');
+              pow.append(render(ast.left), el('span', 'sup'));
+              pow.lastChild.append(render(ast.right));
+              return pow;
+            }
+            return wrap([render(ast.left), el('span', 'op-cell', ast.implicit ? '×' : ast.op), render(ast.right)]);
+          case 'frac': {
+            const frac = el('span', 'frac');
+            const num = el('span', 'math-row');
+            const den = el('span', 'math-row');
+            num.append(render(ast.num));
+            den.append(render(ast.den));
+            frac.append(num, el('span', 'frac-rule'), den);
+            return frac;
+          }
+          case 'factorial': return wrap([render(ast.value), el('span', 'op-cell', '!')]);
+          case 'func':
+            if (ast.name === 'sqrt') {
+              const root = el('span', 'root');
+              root.innerHTML = '<svg class="radical" viewBox="0 0 24 42" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 24l5 10L18 4"/></svg>';
+              const radicand = el('span', 'radicand');
+              radicand.append(render(ast.args[0]));
+              root.append(radicand);
+              return root;
+            }
+            if (ast.name === 'abs') {
+              const abs = el('span', 'abs');
+              abs.append(render(ast.args[0]));
+              return abs;
+            }
+            return wrap([
+              el('span', 'cell func-name', ast.name),
+              el('span', 'op-cell', '('),
+              ...ast.args.flatMap((arg, index) => index ? [el('span', 'op-cell', ','), render(arg)] : [render(arg)]),
+              el('span', 'op-cell', ')')
+            ]);
+          default:
+            return el('span', 'cell', '?');
+        }
+      }
+      function toText(ast) {
+        if (!ast) return '';
+        switch (ast.type) {
+          case 'num': return formatNumber(ast.value);
+          case 'var': return ast.name;
+          case 'const': return ast.name === 'pi' ? 'π' : 'e';
+          case 'infinity': return '∞';
+          case 'unary': return `${ast.op}${toText(ast.value)}`;
+          case 'bin': return ast.op === '^' ? `(${toText(ast.left)})^(${toText(ast.right)})` : `(${toText(ast.left)} ${ast.op} ${toText(ast.right)})`;
+          case 'frac': return `(${toText(ast.num)})/(${toText(ast.den)})`;
+          case 'factorial': return `${toText(ast.value)}!`;
+          case 'func': return `${ast.name}(${ast.args.map(toText).join(', ')})`;
+          default: return '?';
+        }
+      }
+      function renderDraft(expression) {
+        const row = el('span', 'math-row');
+        try {
+          Lexer.tokenize(expression).forEach(token => {
+            if (token.type === 'eof') return;
+            if (token.type === 'name' && functionNames.has(token.name)) row.append(el('span', 'cell func-name', token.name));
+            else if (token.type === 'number') row.append(el('span', 'cell', token.raw));
+            else if (token.type === 'var') row.append(el('span', 'cell', token.name));
+            else if (token.type === 'const') row.append(el('span', 'cell', token.name === 'pi' ? 'π' : 'e'));
+            else if (token.type === 'infinity') row.append(el('span', 'cell', '∞'));
+            else row.append(el('span', 'op-cell', token.type));
+          });
+        } catch {
+          [...expression].forEach(char => row.append(el(/[a-z]/i.test(char) ? 'span' : 'span', /[a-z]/i.test(char) ? 'cell' : 'op-cell', char)));
+        }
+        return row;
+      }
+      return { render, renderDraft, toText };
+    })();
+
+    const Pipeline = (() => {
+      let timer = 0;
+      function runNow(expression) {
+        if (!expression.trim()) {
+          Store.patch({ ast: null, simplified: null, steps: [], value: 0, error: '' });
+          return;
+        }
+        try {
+          const ast = Parser.parse(graphExpressionOf(expression));
+          const { result, steps } = Simplifier.simplify(ast);
+          const hasVar = JSON.stringify(result).includes('"type":"var"');
+          const value = hasVar ? NaN : Evaluator.evalAst(result);
+          Store.patch({ ast, simplified: result, steps, value, error: '' });
+        } catch (error) {
+          Store.patch({ ast: null, simplified: null, steps: [], value: 0, error: error.message });
+        }
+      }
+      function run(expression) {
+        clearTimeout(timer);
+        timer = setTimeout(() => runNow(expression), 50);
+      }
+      return { run, runNow };
+    })();
+
+    const Keypad = (() => {
+      const layers = {
+        basic: [
+          ['7', '8', '9', '(', ')'],
+          ['4', '5', '6', '×', '÷'],
+          ['1', '2', '3', '+', '-'],
+          ['0', '.', 'π', '^', '='],
+          ['C', '⌫', 'x', '√', '!']
+        ],
+        intermediate: [
+          ['sin', 'cos', 'tan', 'log', 'ln'],
+          ['asin', 'acos', 'atan', 'abs', 'e'],
+          ['x²', 'x³', '1/x', 'nCr', 'nPr'],
+          ['(', ')', ',', '+', '-'],
+          ['C', '⌫', '×', '÷', '=']
+        ],
+        advanced: [
+          ['sqrt(', 'root(', 'abs(', 'floor(', 'ceil('],
+          ['sec(', 'csc(', 'cot(', 'sinh(', 'cosh('],
+          ['tanh(', 'exp(', 'min(', 'max(', 'round('],
+          ['x', ',', '(', ')', '!'],
+          ['C', '⌫', '+', '-', '=']
+        ]
+      };
+      layers.symbols = [
+        ['π', 'e', '∞', 'θ', 'φ'],
+        ['α', 'β', 'γ', 'δ', 'λ'],
+        ['μ', 'σ', 'ω', '√', '|x|'],
+        ['x²', 'x³', '1/x', 'nCr', 'nPr'],
+        ['C', '⌫', '×', '÷', '=']
+      ];
+      const tokenMap = {
+        '×': '*', '÷': '/', 'π': 'pi', '√': 'sqrt()', '∞': 'Infinity',
+        '|x|': 'abs()',
+        '×': '*', '÷': '/', 'π': 'pi', '√': 'sqrt()',
+        'sin': 'sin()', 'cos': 'cos()', 'tan': 'tan()', 'log': 'log()', 'ln': 'ln()',
+        'asin': 'asin()', 'acos': 'acos()', 'atan': 'atan()', 'abs': 'abs()',
+        'sqrt(': 'sqrt()', 'root(': 'root()', 'abs(': 'abs()', 'sin(': 'sin()', 'cos(': 'cos()',
+        'tan(': 'tan()', 'log(': 'log()', 'ln(': 'ln()', 'ncr(': 'ncr()', 'npr(': 'npr()',
+        'sec(': 'sec()', 'csc(': 'csc()', 'cot(': 'cot()', 'sinh(': 'sinh()', 'cosh(': 'cosh()',
+        'tanh(': 'tanh()', 'exp(': 'exp()', 'floor(': 'floor()', 'ceil(': 'ceil()', 'round(': 'round()',
+        'min(': 'min()', 'max(': 'max()',
+        'nCr': 'ncr()', 'nPr': 'npr()'
+      };
+      const grid = $('#key-grid');
+      const popover = $('#variable-popover');
+      let holdTimer = 0;
+      function draw(layer) {
+        grid.replaceChildren();
+        layers[layer].flat().forEach(label => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'key';
+          if ('+-×÷^=,!()'.includes(label) || ['^2', '^3', '^('].includes(label)) btn.classList.add('operator');
+          if (['C', '⌫', '='].includes(label)) btn.classList.add('action');
+          if (/sin|cos|tan|log|ln|sqrt|root|abs|nCr|nPr|√/.test(label)) btn.classList.add('function');
+          if (['π', 'pi', 'e'].includes(label)) btn.classList.add('constant');
+          if (/sin|cos|tan|sec|csc|cot|sinh|cosh|tanh|log|ln|exp|sqrt|root|abs|floor|ceil|round|min|max|nCr|nPr|√|\|x\|/.test(label)) btn.classList.add('function');
+          if (['π', '∞'].includes(label)) btn.classList.add('constant');
+          if (label === '⌫') btn.classList.add('action');
+          if (label === 'x') btn.dataset.variableTrigger = 'true';
+          btn.textContent = label;
+          btn.dataset.token = label;
+          grid.append(btn);
+        });
+      }
+      function drawVariablePicker() {
+        const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+        const greek = ['θ', 'φ', 'α', 'β', 'γ', 'δ', 'λ', 'μ', 'σ', 'ω'];
+        popover.replaceChildren();
+        [...letters, ...greek].forEach(symbol => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = symbol;
+          btn.dataset.variable = symbol;
+          popover.append(btn);
+        });
+      }
+      function showVariablePicker() {
+        drawVariablePicker();
+        popover.classList.add('is-open');
+      }
+      function hideVariablePicker() {
+        popover.classList.remove('is-open');
+      }
+      function getInput() {
+        return $('#expression-input');
+      }
+      function replaceRange(input, start, end, text, cursorOffset = text.length) {
+        const next = input.value.slice(0, start) + text + input.value.slice(end);
+        input.value = next;
+        input.focus();
+        input.setSelectionRange(start + cursorOffset, start + cursorOffset);
+        Store.set('expression', next);
+      }
+      function insert(text) {
+        const input = getInput();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const inside = text.includes('()') ? text.indexOf('()') + 1 : text.includes('(,)') ? text.indexOf('(,)') + 1 : text.length;
+        replaceRange(input, start, end, text, inside);
+      }
+      function previousTermStart(value, cursor) {
+        let i = cursor - 1;
+        while (i >= 0 && /\s/.test(value[i])) i -= 1;
+        if (i < 0) return cursor;
+        if (value[i] === ')') {
+          let depth = 1;
+          i -= 1;
+          while (i >= 0) {
+            if (value[i] === ')') depth += 1;
+            if (value[i] === '(') depth -= 1;
+            if (depth === 0) break;
+            i -= 1;
+          }
+          while (i > 0 && /[a-zA-Z]/.test(value[i - 1])) i -= 1;
+          return Math.max(i, 0);
+        }
+        while (i >= 0 && /[\d.a-zA-Zπ]/.test(value[i])) i -= 1;
+        return i + 1;
+      }
+      function applyPower(power) {
+        const input = getInput();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (start !== end) {
+          replaceRange(input, start, end, `(${input.value.slice(start, end)})^${power}`);
+          return;
+        }
+        const termStart = previousTermStart(input.value, start);
+        if (termStart === start) {
+          replaceRange(input, start, end, `x^${power}`);
+          return;
+        }
+        replaceRange(input, start, end, `^${power}`);
+      }
+      function reciprocal() {
+        const input = $('#expression-input');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (start !== end) {
+          const wrapped = `1/(${input.value.slice(start, end)})`;
+          replaceRange(input, start, end, wrapped, wrapped.length);
+          return;
+        }
+        replaceRange(input, start, end, '1/()', 3);
+      }
+      function backspace() {
+        const input = $('#expression-input');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (start === 0 && end === 0) return;
+        const next = start === end
+          ? input.value.slice(0, start - 1) + input.value.slice(end)
+          : input.value.slice(0, start) + input.value.slice(end);
+        const cursor = start === end ? start - 1 : start;
+        input.value = next;
+        input.focus();
+        input.setSelectionRange(Math.max(cursor, 0), Math.max(cursor, 0));
+        Store.set('expression', next);
+      }
+      function commitResult() {
+        const { value, error } = Store.snapshot();
+        if (!error && Number.isFinite(value)) {
+          $('#expression-input').value = formatNumber(value);
+          Store.set('expression', formatNumber(value));
+        }
+      }
+      function init() {
+        draw(Store.get('layer'));
+        $('.segmented').addEventListener('click', event => {
+          const btn = event.target.closest('button[data-layer]');
+          if (!btn) return;
+          Store.set('layer', btn.dataset.layer);
+        });
+        grid.addEventListener('click', event => {
+          const btn = event.target.closest('button[data-token]');
+          if (!btn) return;
+          const label = btn.dataset.token;
+          hideVariablePicker();
+          if (label === '⌫') {
+            backspace();
+            return;
+          }
+          if (label === 'x²') {
+            applyPower('2');
+            return;
+          }
+          if (label === 'x³') {
+            applyPower('3');
+            return;
+          }
+          if (label === 'C') {
+            $('#expression-input').value = '';
+            Store.set('expression', '');
+          } else if (label === '⌫') {
+            backspace();
+          } else if (label === '=') {
+            commitResult();
+          } else if (label === 'x²' || label === '^2') {
+            applyPower('2');
+          } else if (label === 'x³' || label === '^3') {
+            applyPower('3');
+          } else if (label === '1/x') {
+            reciprocal();
+          } else {
+            insert(tokenMap[label] || label);
+          }
+        });
+        grid.addEventListener('pointerdown', event => {
+          const btn = event.target.closest('button[data-variable-trigger]');
+          if (!btn) return;
+          clearTimeout(holdTimer);
+          holdTimer = setTimeout(showVariablePicker, 420);
+        });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(type => {
+          grid.addEventListener(type, () => clearTimeout(holdTimer));
+        });
+        grid.addEventListener('contextmenu', event => {
+          const btn = event.target.closest('button[data-variable-trigger]');
+          if (!btn) return;
+          event.preventDefault();
+          showVariablePicker();
+        });
+        popover.addEventListener('click', event => {
+          const btn = event.target.closest('button[data-variable]');
+          if (!btn) return;
+          insert(btn.dataset.variable);
+          hideVariablePicker();
+        });
+        document.addEventListener('pointerdown', event => {
+          if (!event.target.closest('#variable-popover') && !event.target.closest('[data-variable-trigger]')) hideVariablePicker();
+        });
+        $('#expression-input').addEventListener('input', event => Store.set('expression', event.target.value));
+        $('#copy-result').addEventListener('click', async () => {
+          const text = $('#result-output').textContent;
+          try {
+            await navigator.clipboard.writeText(text);
+            $('#status-line').textContent = 'Copied result';
+          } catch {
+            $('#status-line').textContent = 'Clipboard unavailable';
+          }
+        });
+        Store.subscribe('layer', layer => {
+          $$('.segmented button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layer === layer)));
+          draw(layer);
+        });
+      }
+      return { init };
+    })();
+
+    const CalcView = (() => {
+      function renderPaper() {
+        const { ast, error, expression } = Store.snapshot();
+        const out = $('#paper-output');
+        out.replaceChildren();
+        if (error) {
+          out.append(Renderer.renderDraft(expression));
+        } else if (!expression.trim()) {
+          out.append(Renderer.render(null));
+        } else {
+          out.append(Renderer.render(ast));
+        }
+      }
+      function renderSteps(steps) {
+        $('#step-count').textContent = `${steps.length}`;
+        const out = $('#steps-output');
+        out.replaceChildren();
+        if (!steps.length) {
+          const empty = document.createElement('div');
+          empty.className = 'step-rule';
+          empty.textContent = 'No simplification steps yet.';
+          out.append(empty);
+          return;
+        }
+        steps.slice(-8).forEach(step => {
+          const row = document.createElement('div');
+          row.className = 'step';
+          const rule = document.createElement('div');
+          rule.className = 'step-rule';
+          rule.textContent = step.rule;
+          const math = document.createElement('div');
+          math.className = 'step-math';
+          math.append(Renderer.render(step.before), Object.assign(document.createElement('span'), { textContent: '→' }), Renderer.render(step.after));
+          row.append(rule, math);
+          out.append(row);
+        });
+      }
+      function init() {
+        Store.subscribe('expression', expression => Pipeline.run(expression));
+        ['ast', 'error', 'expression'].forEach(key => Store.subscribe(key, renderPaper));
+        Store.subscribe('steps', renderSteps);
+        Store.subscribe('value', value => {
+          const { error, expression, simplified } = Store.snapshot();
+          $('#status-line').textContent = error || (!expression.trim() ? 'Ready' : simplified && Number.isNaN(value) ? 'Symbolic expression' : 'Result');
+          $('#result-output').textContent = error ? 'Error' : Number.isNaN(value) ? astText(simplified) : formatNumber(value);
+        });
+      }
+      return { init };
+    })();
+
+    const Graph = (() => {
+      const palette = ['#4f7ee8', '#d95d76', '#5e9446', '#bb7d28', '#8066d6', '#2a8fb8'];
+      const canvas = $('#plot');
+      const wrap = $('#canvas-wrap');
+      let ctx;
+      let raf = 0;
+      let renderedEquationSignature = '';
+      const pointers = new Map();
+      let gesture = null;
+      const mathToPx = (x, y, vp, rect) => ({
+        x: (x - vp.xMin) / (vp.xMax - vp.xMin) * rect.width,
+        y: (vp.yMax - y) / (vp.yMax - vp.yMin) * rect.height
+      });
+      const pxToMath = (x, y, vp, rect) => ({
+        x: vp.xMin + x / rect.width * (vp.xMax - vp.xMin),
+        y: vp.yMax - y / rect.height * (vp.yMax - vp.yMin)
+      });
+      function compile(expr) {
+        const ast = Parser.parse(expr.replace(/^y\s*=\s*/i, ''));
+        return x => Evaluator.evalAst(ast, { x });
+      }
+      function resize() {
+        const rect = wrap.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        schedule();
+      }
+      function drawGrid(rect, vp) {
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        ctx.fillStyle = 'rgba(255,255,255,0.24)';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        const spanX = vp.xMax - vp.xMin;
+        const spanY = vp.yMax - vp.yMin;
+        const step = Math.pow(10, Math.floor(Math.log10(spanX / 8)));
+        const stepY = Math.pow(10, Math.floor(Math.log10(spanY / 8)));
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(29,35,42,0.09)';
+        ctx.beginPath();
+        for (let x = Math.ceil(vp.xMin / step) * step; x <= vp.xMax; x += step) {
+          const p = mathToPx(x, 0, vp, rect).x;
+          ctx.moveTo(p, 0);
+          ctx.lineTo(p, rect.height);
+        }
+        for (let y = Math.ceil(vp.yMin / stepY) * stepY; y <= vp.yMax; y += stepY) {
+          const p = mathToPx(0, y, vp, rect).y;
+          ctx.moveTo(0, p);
+          ctx.lineTo(rect.width, p);
+        }
+        ctx.stroke();
+        const origin = mathToPx(0, 0, vp, rect);
+        ctx.strokeStyle = 'rgba(29,35,42,0.34)';
+        ctx.beginPath();
+        ctx.moveTo(origin.x, 0);
+        ctx.lineTo(origin.x, rect.height);
+        ctx.moveTo(0, origin.y);
+        ctx.lineTo(rect.width, origin.y);
+        ctx.stroke();
+      }
+      function plotEquation(fn, color, rect, vp) {
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        let drawing = false;
+        let prev = null;
+        const annotations = [];
+        for (let px = 0; px <= rect.width; px += 1) {
+          const x = pxToMath(px, 0, vp, rect).x;
+          const y = fn(x);
+          const finite = Number.isFinite(y) && Math.abs(y) < 1e8;
+          if (!finite) {
+            drawing = false;
+            prev = null;
+            continue;
+          }
+          const p = mathToPx(x, y, vp, rect);
+          const jump = prev && Math.abs(p.y - prev.p.y) > rect.height * 0.75 && Math.sign(y) !== Math.sign(prev.y);
+          if (jump || p.y < -rect.height * 3 || p.y > rect.height * 4) {
+            drawing = false;
+            prev = { x, y, p };
+            continue;
+          }
+          if (!drawing) {
+            ctx.moveTo(p.x, p.y);
+            drawing = true;
+          } else {
+            ctx.lineTo(p.x, p.y);
+          }
+          if (prev && y === 0 || (prev && Math.sign(prev.y) !== Math.sign(y) && Math.abs(y - prev.y) < Math.abs(vp.yMax - vp.yMin))) {
+            annotations.push({ kind: 'zero', x, y: 0 });
+          }
+          if (prev && annotations.length < 6) {
+            const ahead = fn(x + (vp.xMax - vp.xMin) / rect.width);
+            if (Number.isFinite(ahead) && Math.sign(y - prev.y) !== Math.sign(ahead - y) && Math.abs(ahead - y) > 1e-4) {
+              annotations.push({ kind: 'turn', x, y });
+            }
+          }
+          prev = { x, y, p };
+        }
+        ctx.stroke();
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+        annotations.slice(0, 5).forEach(item => {
+          const p = mathToPx(item.x, item.y, vp, rect);
+          if (p.x < 0 || p.x > rect.width || p.y < 0 || p.y > rect.height) return;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillText(`${item.kind === 'zero' ? 'x' : 'v'} ${formatNumber(item.x)}, ${formatNumber(item.y)}`, p.x + 7, p.y - 7);
+        });
+      }
+      function draw() {
+        raf = 0;
+        const rect = wrap.getBoundingClientRect();
+        const vp = Store.get('viewport');
+        drawGrid(rect, vp);
+        Store.get('equations').forEach(eq => {
+          if (!eq.expr.trim()) return;
+          try {
+            plotEquation(compile(eq.expr), eq.color, rect, vp);
+          } catch {
+            // Invalid graph equations are shown in the list, but skipped in canvas drawing.
+          }
+        });
+        $('#viewport-readout').textContent = `x ${formatNumber(vp.xMin)}..${formatNumber(vp.xMax)}  y ${formatNumber(vp.yMin)}..${formatNumber(vp.yMax)}`;
+      }
+      function schedule() {
+        if (!raf) raf = requestAnimationFrame(draw);
+      }
+      function zoomAt(clientX, clientY, factor) {
+        const rect = wrap.getBoundingClientRect();
+        const vp = Store.get('viewport');
+        const anchor = pxToMath(clientX - rect.left, clientY - rect.top, vp, rect);
+        const next = {
+          xMin: anchor.x + (vp.xMin - anchor.x) * factor,
+          xMax: anchor.x + (vp.xMax - anchor.x) * factor,
+          yMin: anchor.y + (vp.yMin - anchor.y) * factor,
+          yMax: anchor.y + (vp.yMax - anchor.y) * factor
+        };
+        Store.set('viewport', next);
+      }
+      function panBy(dx, dy) {
+        const rect = wrap.getBoundingClientRect();
+        const vp = Store.get('viewport');
+        const spanX = vp.xMax - vp.xMin;
+        const spanY = vp.yMax - vp.yMin;
+        Store.set('viewport', {
+          xMin: vp.xMin - dx / rect.width * spanX,
+          xMax: vp.xMax - dx / rect.width * spanX,
+          yMin: vp.yMin + dy / rect.height * spanY,
+          yMax: vp.yMax + dy / rect.height * spanY
+        });
+      }
+      function renderEquations() {
+        const host = $('#equations');
+        host.replaceChildren();
+        Store.get('equations').forEach((eq, index) => {
+          const row = document.createElement('div');
+          row.className = 'equation-row';
+          row.innerHTML = `<span class="swatch" style="background:${eq.color}"></span><input aria-label="Equation ${index + 1}" value=""><button class="icon-btn" type="button" title="Remove equation" aria-label="Remove equation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>`;
+          const input = $('input', row);
+          input.dataset.equationId = eq.id;
+          input.value = eq.expr;
+          input.addEventListener('input', event => {
+            const equations = Store.get('equations').map(item => item.id === eq.id ? { ...item, expr: event.target.value } : item);
+            Store.set('equations', equations);
+          });
+          $('button', row).addEventListener('click', () => {
+            Store.set('equations', Store.get('equations').filter(item => item.id !== eq.id));
+          });
+          host.append(row);
+        });
+      }
+      function updateEquationInputs() {
+        $$('#equations input[data-equation-id]').forEach(input => {
+          if (document.activeElement === input) return;
+          const eq = Store.get('equations').find(item => item.id === input.dataset.equationId);
+          if (eq && input.value !== eq.expr) input.value = eq.expr;
+        });
+      }
+      function syncCalculatorExpression(expression) {
+        const { calcGraphId } = Store.snapshot();
+        const expressionText = graphExpressionOf(expression);
+        const equations = Store.get('equations');
+        const withoutCalc = equations.filter(eq => eq.id !== calcGraphId);
+        if (!expressionText || !isGraphExpression(expression)) {
+          if (withoutCalc.length !== equations.length) Store.set('equations', withoutCalc);
+          return;
+        }
+        if (withoutCalc.some(eq => graphExpressionOf(eq.expr) === expressionText)) {
+          if (withoutCalc.length !== equations.length) Store.set('equations', withoutCalc);
+          return;
+        }
+        const calcEquation = { id: calcGraphId, expr: expressionText, color: '#2a8fb8', source: 'calc' };
+        const next = [calcEquation, ...withoutCalc];
+        const changed = JSON.stringify(equations) !== JSON.stringify(next);
+        if (changed) Store.set('equations', next);
+      }
+      function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        Store.subscribe('equations', equations => {
+          const signature = equations.map(eq => `${eq.id}:${eq.color}`).join('|');
+          if (signature !== renderedEquationSignature) {
+            renderedEquationSignature = signature;
+            renderEquations();
+          }
+          updateEquationInputs();
+          schedule();
+        });
+        Store.subscribe('expression', syncCalculatorExpression);
+        Store.subscribe('viewport', schedule);
+        $('#add-equation').addEventListener('click', () => {
+          const equations = Store.get('equations');
+          Store.set('equations', [...equations, { id: crypto.randomUUID(), expr: 'cos(x)', color: palette[equations.length % palette.length] }]);
+        });
+        $('#fit-graph').addEventListener('click', () => Store.set('viewport', { xMin: -10, xMax: 10, yMin: -7, yMax: 7 }));
+        wrap.addEventListener('wheel', event => {
+          event.preventDefault();
+          zoomAt(event.clientX, event.clientY, event.deltaY > 0 ? 1.14 : 0.88);
+        }, { passive: false });
+        wrap.addEventListener('pointerdown', event => {
+          wrap.setPointerCapture(event.pointerId);
+          pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (pointers.size === 1) gesture = { mode: 'pan', x: event.clientX, y: event.clientY };
+          if (pointers.size === 2) {
+            const pts = [...pointers.values()];
+            gesture = { mode: 'pinch', dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), viewport: clone(Store.get('viewport')) };
+          }
+        });
+        wrap.addEventListener('pointermove', event => {
+          if (!pointers.has(event.pointerId) || !gesture) return;
+          const old = pointers.get(event.pointerId);
+          pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gesture.mode === 'pan' && pointers.size === 1) {
+            panBy(event.clientX - old.x, event.clientY - old.y);
+          } else if (gesture.mode === 'pinch' && pointers.size === 2) {
+            const pts = [...pointers.values()];
+            const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+            const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+            Store.set('viewport', gesture.viewport);
+            zoomAt(mid.x, mid.y, gesture.dist / Math.max(dist, 1));
+          }
+        });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => wrap.addEventListener(type, event => {
+          pointers.delete(event.pointerId);
+          gesture = null;
+        }));
+      }
+      return { init, schedule, resize };
+    })();
+
+    const Router = (() => {
+      function init() {
+        $('.tab-bar').addEventListener('click', event => {
+          const btn = event.target.closest('button[data-tab]');
+          if (!btn) return;
+          Store.set('tab', btn.dataset.tab);
+        });
+        Store.subscribe('tab', tab => {
+          $$('.tab').forEach(button => button.setAttribute('aria-selected', String(button.dataset.tab === tab)));
+          $$('.view').forEach(view => view.classList.toggle('is-active', view.id === `${tab}-view`));
+          if (tab === 'graph') Graph.resize();
+        });
+      }
+      return { init };
+    })();
+
+    const PWA = (() => {
+      let deferredPrompt = null;
+      function init() {
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+          window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+        }
+        window.addEventListener('beforeinstallprompt', event => {
+          event.preventDefault();
+          deferredPrompt = event;
+          $('#install-area').classList.add('is-visible');
+        });
+        $('#install-button').addEventListener('click', async () => {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          $('#install-area').classList.remove('is-visible');
+        });
+      }
+      return { init };
+    })();
+
+    const Tests = (() => {
+      const cases = [
+        ['2+2', 4], ['2*3+4', 10], ['2(3+4)', 14], ['(3/4 + sqrt(16))^2', 22.5625],
+        ['sin(pi/2)', 1], ['cos(0)', 1], ['tan(0)', 0], ['sec(0)', 1], ['cot(pi/4)', 1], ['log(1000)', 3], ['ln(e)', 1], ['exp(1)', Math.E], ['root(2,16)', 4],
+        ['5!', 120], ['ncr(5,2)', 10], ['npr(5,2)', 20], ['2^3^2', 512],
+        ['1/2 + 1/2', 1], ['abs(-7)', 7], ['floor(2.9)', 2], ['ceil(2.1)', 3], ['round(2.6)', 3], ['min(4,2)', 2], ['max(4,2)', 4], ['2^2', 4], ['√16 + 3²', 13], ['cos(2)^2', Math.cos(2) ** 2],
+        ['sinx', Math.sin(2), { x: 2 }], ['cosx^2', Math.cos(2) ** 2, { x: 2 }],
+        ['3x', NaN], ['x+x', NaN]
+      ];
+      function run() {
+        const lines = [];
+        let pass = 0;
+        cases.forEach(([expr, expected, scope]) => {
+          try {
+            const ast = Parser.parse(expr);
+            const { result } = Simplifier.simplify(ast);
+            const symbolic = JSON.stringify(result).includes('"type":"var"') && !scope;
+            const value = symbolic ? NaN : Evaluator.evalAst(result, scope);
+            const ok = Number.isNaN(expected) ? Number.isNaN(value) : Math.abs(value - expected) < 1e-9;
+            if (ok) pass += 1;
+            lines.push(`${ok ? 'PASS' : 'FAIL'} ${expr} => ${Number.isNaN(value) ? astText(result) : formatNumber(value)} expected ${expected}`);
+          } catch (error) {
+            lines.push(`FAIL ${expr} threw ${error.message}`);
+          }
+        });
+        const panel = $('#test-panel');
+        panel.classList.add('is-visible');
+        panel.textContent = `${pass}/${cases.length} math pipeline tests passed\n${lines.join('\n')}`;
+        console.log(panel.textContent);
+      }
+      return { run };
+    })();
+
+    Keypad.init();
+    CalcView.init();
+    Graph.init();
+    Router.init();
+    PWA.init();
+    Pipeline.runNow('');
+    if (new URLSearchParams(location.search).get('test') === '1') Tests.run();
+  </script>
+</body>
+</html>

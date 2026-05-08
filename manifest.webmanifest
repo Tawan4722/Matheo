@@ -1,0 +1,17 @@
+{
+  "name": "Matheo",
+  "short_name": "Matheo",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F7F6F2",
+  "theme_color": "#F7F6F2",
+  "description": "A focused offline math workspace with paper-style calculation and graphing.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%23f7f6f2'/%3E%3Cpath d='M34 30h60a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H34a8 8 0 0 1-8-8V38a8 8 0 0 1 8-8Z' fill='%23ffffff' stroke='%231d232a' stroke-width='5'/%3E%3Cpath d='M42 49h44M42 66h44M42 83h18M74 83h12' stroke='%237aa2f7' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
