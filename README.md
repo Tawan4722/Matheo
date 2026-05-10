@@ -95,9 +95,10 @@ deriv integral limit
 
 ## Function Page
 
-- The `Func` tab evaluates functions in `x`.
+- The `Func` tab evaluates and analyzes functions in `x`.
 - Enter forms such as `x^2 - 4`, `sin(x)`, `f(x)=x^3-2x`, or `y=cos(x)`.
-- It evaluates `f(x)` at the selected input value and generates a table from `x=-5` through `x=5`.
+- It evaluates `f(x)` at the selected input value and generates a table using custom min/max/step controls.
+- It reports y-intercept, sampled roots, sampled range, quadratic vertex when detected, critical points, increasing/decreasing intervals, first derivative, second derivative, and tangent line at the selected `x`.
 - Use `Graph` to send the current function to the graph page.
 
 ## Logic Page

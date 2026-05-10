@@ -762,6 +762,33 @@
       overflow-wrap: anywhere;
     }
 
+    .function-range {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .function-range .function-field {
+      grid-template-columns: 1fr;
+      gap: 5px;
+    }
+
+    .function-analysis {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.88rem;
+    }
+
+    .function-analysis div {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.5);
+      overflow-wrap: anywhere;
+    }
+
     .logic-expression {
       width: 100%;
       min-height: 96px;
@@ -1199,7 +1226,22 @@
           <span>x =</span>
           <input id="function-x" value="2" spellcheck="false" autocomplete="off" autocapitalize="off">
         </label>
+        <div class="function-range">
+          <label class="function-field">
+            <span>min</span>
+            <input id="function-min" value="-5" spellcheck="false" autocomplete="off" autocapitalize="off">
+          </label>
+          <label class="function-field">
+            <span>max</span>
+            <input id="function-max" value="5" spellcheck="false" autocomplete="off" autocapitalize="off">
+          </label>
+          <label class="function-field">
+            <span>step</span>
+            <input id="function-step" value="1" spellcheck="false" autocomplete="off" autocapitalize="off">
+          </label>
+        </div>
         <div class="function-result" id="function-result">f(2) = 0</div>
+        <div class="function-analysis" id="function-analysis"></div>
       </section>
 
       <section class="function-table-panel">
@@ -3157,6 +3199,115 @@
         const ast = Parser.parse(expr);
         return { expr, ast, fn: x => Evaluator.evalAst(ast, { x }) };
       }
+      function parseNumberInput(selector, fallback) {
+        const raw = $(selector).value.trim();
+        if (!raw) return fallback;
+        const value = Evaluator.evalAst(Parser.parse(normalizeMathInput(raw)));
+        if (!Number.isFinite(value)) throw new Error(`${selector.replace('#function-', '')} must be finite`);
+        return value;
+      }
+      function safeEval(fn, x) {
+        try {
+          const y = fn(x);
+          return Number.isFinite(y) ? y : NaN;
+        } catch {
+          return NaN;
+        }
+      }
+      function derivative(fn, x) {
+        const h = Math.max(1e-5, Math.abs(x) * 1e-5);
+        return (fn(x + h) - fn(x - h)) / (2 * h);
+      }
+      function secondDerivative(fn, x) {
+        const h = Math.max(1e-4, Math.abs(x) * 1e-4);
+        return (fn(x + h) - 2 * fn(x) + fn(x - h)) / (h * h);
+      }
+      function bisectRoot(fn, a, b) {
+        let fa = safeEval(fn, a);
+        for (let i = 0; i < 60; i += 1) {
+          const mid = (a + b) / 2;
+          const fm = safeEval(fn, mid);
+          if (!Number.isFinite(fm)) return NaN;
+          if (Math.abs(fm) < 1e-9) return mid;
+          if (Math.sign(fa) === Math.sign(fm)) {
+            a = mid;
+            fa = fm;
+          } else {
+            b = mid;
+          }
+        }
+        return (a + b) / 2;
+      }
+      function addUnique(list, value, eps = 1e-5) {
+        if (Number.isFinite(value) && !list.some(item => Math.abs(item - value) < eps)) list.push(value);
+      }
+      function findRoots(fn, min, max) {
+        const roots = [];
+        const samples = 240;
+        let prevX = min;
+        let prevY = safeEval(fn, prevX);
+        if (Math.abs(prevY) < 1e-8) addUnique(roots, prevX);
+        for (let i = 1; i <= samples; i += 1) {
+          const x = min + (max - min) * i / samples;
+          const y = safeEval(fn, x);
+          if (Math.abs(y) < 1e-8) addUnique(roots, x);
+          if (Number.isFinite(prevY) && Number.isFinite(y) && Math.sign(prevY) !== Math.sign(y)) addUnique(roots, bisectRoot(fn, prevX, x));
+          prevX = x;
+          prevY = y;
+        }
+        return roots.sort((a, b) => a - b);
+      }
+      function findCriticalPoints(fn, min, max) {
+        const points = [];
+        const d = x => derivative(fn, x);
+        const samples = 180;
+        let prevX = min;
+        let prevY = safeEval(d, prevX);
+        for (let i = 1; i <= samples; i += 1) {
+          const x = min + (max - min) * i / samples;
+          const y = safeEval(d, x);
+          if (Number.isFinite(prevY) && Number.isFinite(y) && Math.sign(prevY) !== Math.sign(y)) {
+            const root = bisectRoot(d, prevX, x);
+            addUnique(points, root);
+          }
+          prevX = x;
+          prevY = y;
+        }
+        return points.map(x => ({ x, y: safeEval(fn, x) })).filter(point => Number.isFinite(point.y));
+      }
+      function monotonicIntervals(fn, min, max, criticalPoints) {
+        const cuts = [min, ...criticalPoints.map(point => point.x), max].sort((a, b) => a - b);
+        const intervals = [];
+        for (let i = 0; i < cuts.length - 1; i += 1) {
+          const a = cuts[i];
+          const b = cuts[i + 1];
+          if (Math.abs(b - a) < 1e-8) continue;
+          const mid = (a + b) / 2;
+          const slope = safeEval(x => derivative(fn, x), mid);
+          intervals.push(`${slope >= 0 ? 'increasing' : 'decreasing'} on [${formatNumber(a)}, ${formatNumber(b)}]`);
+        }
+        return intervals;
+      }
+      function quadraticVertex(fn) {
+        const c = safeEval(fn, 0);
+        const y1 = safeEval(fn, 1);
+        const yn1 = safeEval(fn, -1);
+        if (![c, y1, yn1].every(Number.isFinite)) return null;
+        const a = (y1 + yn1 - 2 * c) / 2;
+        const b = (y1 - yn1) / 2;
+        if (Math.abs(a) < 1e-10) return null;
+        const check = safeEval(fn, 2);
+        if (Number.isFinite(check) && Math.abs((4 * a + 2 * b + c) - check) > 1e-5) return null;
+        const x = -b / (2 * a);
+        return { x, y: safeEval(fn, x) };
+      }
+      function renderAnalysis(items) {
+        $('#function-analysis').replaceChildren(...items.map(text => {
+          const row = document.createElement('div');
+          row.textContent = text;
+          return row;
+        }));
+      }
       function renderTable(rows) {
         const table = document.createElement('table');
         table.className = 'function-table';
@@ -3186,11 +3337,18 @@
       function evaluate() {
         try {
           const { fn } = compile();
-          const xValue = Evaluator.evalAst(Parser.parse(normalizeMathInput($('#function-x').value || '0')));
+          const xValue = parseNumberInput('#function-x', 0);
+          const min = parseNumberInput('#function-min', -5);
+          const max = parseNumberInput('#function-max', 5);
+          const step = parseNumberInput('#function-step', 1);
+          if (max <= min) throw new Error('max must be greater than min');
+          if (step <= 0) throw new Error('step must be positive');
           const yValue = fn(xValue);
+          const d1 = derivative(fn, xValue);
+          const d2 = secondDerivative(fn, xValue);
           $('#function-result').textContent = `f(${formatNumber(xValue)}) = ${formatNumber(yValue)}`;
           const rows = [];
-          for (let x = -5; x <= 5; x += 1) {
+          for (let x = min; x <= max + step / 2 && rows.length < 500; x += step) {
             try {
               rows.push({ x, y: fn(x) });
             } catch (error) {
@@ -3198,11 +3356,30 @@
             }
           }
           renderTable(rows);
+          const finiteRows = rows.filter(row => Number.isFinite(row.y));
+          const roots = findRoots(fn, min, max);
+          const critical = findCriticalPoints(fn, min, max);
+          const vertex = quadraticVertex(fn);
+          const ys = finiteRows.map(row => row.y);
+          const rangeText = ys.length ? `[${formatNumber(Math.min(...ys))}, ${formatNumber(Math.max(...ys))}] on sampled table` : 'not available';
+          const tangent = Number.isFinite(d1) && Number.isFinite(yValue) ? `y = ${formatNumber(d1)}(x - ${formatNumber(xValue)}) + ${formatNumber(yValue)}` : 'not available';
+          renderAnalysis([
+            `y-intercept: ${formatNumber(safeEval(fn, 0))}`,
+            `roots on [${formatNumber(min)}, ${formatNumber(max)}]: ${roots.length ? roots.map(formatNumber).join(', ') : 'none found'}`,
+            `sampled range: ${rangeText}`,
+            `vertex: ${vertex ? `(${formatNumber(vertex.x)}, ${formatNumber(vertex.y)})` : 'not quadratic / not detected'}`,
+            `critical points: ${critical.length ? critical.map(point => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`).join(', ') : 'none found'}`,
+            `intervals: ${monotonicIntervals(fn, min, max, critical).join('; ') || 'not available'}`,
+            `f'(${formatNumber(xValue)}) = ${formatNumber(d1)}`,
+            `f''(${formatNumber(xValue)}) = ${formatNumber(d2)}`,
+            `tangent line: ${tangent}`
+          ]);
         } catch (error) {
           $('#function-result').textContent = error.message;
           $('#function-result').classList.add('error');
           $('#function-table-wrap').innerHTML = `<div class="logic-empty error">${error.message}</div>`;
           $('#function-row-count').textContent = '0';
+          renderAnalysis([]);
           return;
         }
         $('#function-result').classList.remove('error');
@@ -3223,6 +3400,9 @@
         $('#function-graph').addEventListener('click', graphFunction);
         $('#function-expression').addEventListener('input', evaluate);
         $('#function-x').addEventListener('input', evaluate);
+        $('#function-min').addEventListener('input', evaluate);
+        $('#function-max').addEventListener('input', evaluate);
+        $('#function-step').addEventListener('input', evaluate);
         evaluate();
       }
       return { init };
