@@ -1,0 +1,3014 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F7F6F2">
+  <meta name="description" content="Matheo is an offline math workspace with paper-style calculation and graphing.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%23f7f6f2'/%3E%3Cpath d='M34 30h60a8 8 0 0 1 8 8v52a8 8 0 0 1-8 8H34a8 8 0 0 1-8-8V38a8 8 0 0 1 8-8Z' fill='%23ffffff' stroke='%231d232a' stroke-width='5'/%3E%3Cpath d='M42 49h44M42 66h44M42 83h18M74 83h12' stroke='%237aa2f7' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+  <title>Matheo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f6f2;
+      --bg-2: #ece8df;
+      --ink: #1d232a;
+      --muted: #65717c;
+      --line: rgba(29, 35, 42, 0.1);
+      --glass-bg: rgba(255, 255, 255, 0.68);
+      --glass-solid: #ffffff;
+      --glass-border: rgba(29, 35, 42, 0.08);
+      --shadow-rest: 0 1px 2px rgba(29, 35, 42, 0.04), 0 10px 30px rgba(29, 35, 42, 0.08);
+      --shadow-hover: 0 2px 4px rgba(29, 35, 42, 0.06), 0 16px 36px rgba(29, 35, 42, 0.1);
+      --shadow-press: inset 0 1px 2px rgba(29, 35, 42, 0.14);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --blue: #4f7ee8;
+      --rose: #d95d76;
+      --green: #5e9446;
+      --amber: #bb7d28;
+      --violet: #8066d6;
+      --cyan: #2a8fb8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      color: var(--ink);
+      font-family: var(--font);
+      background:
+        linear-gradient(140deg, rgba(122, 162, 247, 0.18), transparent 34%),
+        linear-gradient(310deg, rgba(158, 206, 106, 0.16), transparent 32%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    #app {
+      width: min(1180px, 100%);
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      font-weight: 760;
+      line-height: 1;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-bar,
+    .segmented,
+    .install-area {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-rest);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    }
+
+    .tab-bar,
+    .segmented {
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 4px;
+      padding: 4px;
+    }
+
+    .tab,
+    .segmented button,
+    .icon-btn,
+    .key,
+    .command-btn {
+      min-height: 42px;
+      border-radius: var(--radius-sm);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab,
+    .segmented button {
+      min-width: 82px;
+      padding: 0 14px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .tab[aria-selected="true"],
+    .segmented button[aria-pressed="true"] {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.07);
+    }
+
+    .install-area {
+      display: none;
+      min-height: 42px;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    .install-area.is-visible {
+      display: flex;
+    }
+
+    .icon-btn,
+    .command-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.05);
+      font-weight: 720;
+    }
+
+    .icon-btn svg,
+    .command-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.2;
+    }
+
+    .view {
+      display: none;
+      min-height: 0;
+    }
+
+    .view.is-active {
+      display: grid;
+    }
+
+    #calc-view {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .calc-main {
+      display: grid;
+      grid-template-rows: minmax(210px, auto) auto;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .paper-display,
+    .steps-panel,
+    .keypad,
+    .graph-pane,
+    .equation-list,
+    .graph-controls,
+    .test-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-rest);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    }
+
+    .paper-display {
+      min-height: 220px;
+      padding: clamp(16px, 3vw, 26px);
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .expression-row {
+      min-height: 78px;
+      overflow-x: auto;
+      display: flex;
+      align-items: center;
+      padding-bottom: 8px;
+    }
+
+    .placeholder {
+      color: #8b949e;
+      font-size: clamp(1.15rem, 5vw, 2.15rem);
+      font-weight: 650;
+      width: 100%;
+      text-align: center;
+    }
+
+    .raw-input {
+      width: 100%;
+      min-height: 45px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 1rem;
+      resize: none;
+      outline: none;
+    }
+
+    .raw-input:focus {
+      border-color: rgba(79, 126, 232, 0.5);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
+    }
+
+    .result-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .result-meta {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      width: min(360px, 100%);
+    }
+
+    #status-line {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(29, 35, 42, 0.14);
+      background: rgba(255, 255, 255, 0.52);
+    }
+
+    .graph-link {
+      display: inline-flex;
+      visibility: hidden;
+      pointer-events: none;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(42, 143, 184, 0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(42, 143, 184, 0.2);
+      font-size: 0.82rem;
+      font-weight: 760;
+    }
+
+    .graph-link.is-visible {
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .result-line output {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      color: var(--ink);
+      font-size: clamp(1.5rem, 7vw, 3.1rem);
+      font-weight: 780;
+      line-height: 1;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .math-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-width: max-content;
+    }
+
+    .cell,
+    .op-cell,
+    .slot-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      min-height: 34px;
+      padding: 4px 8px;
+      border: 1px solid rgba(29, 35, 42, 0.08);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.64);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.04);
+      font-weight: 720;
+      line-height: 1;
+    }
+
+    .slot-box {
+      min-width: 42px;
+      border-style: dashed;
+      border-color: rgba(79, 126, 232, 0.38);
+      background: rgba(79, 126, 232, 0.08);
+      color: var(--blue);
+    }
+
+    .slot-box.is-active {
+      border-style: solid;
+      border-color: rgba(79, 126, 232, 0.72);
+      background: rgba(79, 126, 232, 0.18);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
+    }
+
+    .active-slot {
+      display: inline-flex;
+      align-items: center;
+      border: 2px solid rgba(79, 126, 232, 0.72);
+      border-radius: 10px;
+      padding: 2px;
+      background: rgba(79, 126, 232, 0.12);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.1);
+    }
+
+    .slot-box::before {
+      content: "";
+      width: 18px;
+      height: 2px;
+      border-radius: 999px;
+      background: currentColor;
+      opacity: 0.58;
+    }
+
+    .op-cell {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .func-name {
+      min-width: 42px;
+      color: var(--rose);
+      background: rgba(217, 93, 118, 0.1);
+      border-color: rgba(217, 93, 118, 0.2);
+      text-transform: none;
+    }
+
+    .frac {
+      display: inline-grid;
+      grid-template-rows: auto 1px auto;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px;
+    }
+
+    .frac-rule {
+      height: 1px;
+      background: var(--ink);
+      opacity: 0.75;
+    }
+
+    .key-frac {
+      display: inline-grid;
+      grid-template-rows: auto 1px auto;
+      align-items: center;
+      justify-items: center;
+      min-width: 24px;
+      gap: 3px;
+      line-height: 1;
+    }
+
+    .key-frac span {
+      font-size: 0.78em;
+      font-weight: 820;
+    }
+
+    .key-frac::before {
+      content: "";
+      grid-row: 2;
+      width: 100%;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.8;
+    }
+
+    .key-frac .frac-top {
+      grid-row: 1;
+    }
+
+    .key-frac .frac-bottom {
+      grid-row: 3;
+    }
+
+    .pow {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 1px;
+    }
+
+    .sup {
+      transform: translateY(-0.48em);
+      font-size: 0.65em;
+    }
+
+    .root {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 0;
+    }
+
+    .root-index {
+      align-self: flex-start;
+      color: var(--muted);
+      font-size: 0.7em;
+      font-weight: 760;
+      margin-right: -2px;
+      transform: translateY(0.2em);
+    }
+
+    .radical {
+      width: 22px;
+      height: 38px;
+      align-self: stretch;
+    }
+
+    .radicand {
+      border-top: 2px solid rgba(29, 35, 42, 0.8);
+      padding-top: 4px;
+    }
+
+    .abs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .abs::before,
+      .abs::after {
+      content: "";
+      width: 2px;
+      min-height: 38px;
+      background: rgba(29, 35, 42, 0.76);
+      border-radius: 999px;
+    }
+
+    .bracketed,
+    .calculus-form {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bracket-symbol,
+    .calculus-symbol {
+      color: var(--blue);
+      font-weight: 820;
+      line-height: 1;
+      font-size: 1.8em;
+      margin: 0 4px;
+    }
+
+    .integral-bounds {
+      display: inline-grid;
+      grid-template-rows: auto auto;
+      gap: 2px;
+      font-size: 0.75em;
+      line-height: 1;
+      margin-left: -4px;
+      margin-right: 2px;
+      text-align: center;
+    }
+
+    .limit-container {
+      display: inline-grid;
+      grid-template-rows: auto auto;
+      align-items: center;
+      justify-items: center;
+      margin: 0 4px;
+    }
+
+    .limit-container .calculus-symbol {
+      font-size: 1.2em;
+      margin: 0;
+    }
+
+    .limit-container .limit-sub {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.7em;
+      margin: 0;
+    }
+
+    .steps-panel {
+      min-height: 150px;
+      max-height: 360px;
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 0.98rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .panel-title span {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .step {
+      display: grid;
+      gap: 8px;
+      padding: 11px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .step:first-of-type {
+      border-top: 0;
+    }
+
+    .step-rule {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 720;
+    }
+
+    .step-math {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .step-math .math-row {
+      transform-origin: left center;
+      font-size: 0.82rem;
+    }
+
+    .keypad {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .keypad-wrap {
+      position: relative;
+    }
+
+    .keypad-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .key {
+      min-width: 0;
+      min-height: 52px;
+      padding: 0 6px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.04);
+      font-size: clamp(0.92rem, 3.7vw, 1.06rem);
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .key.operator {
+      color: var(--blue);
+      background: rgba(255, 255, 255, 0.86);
+    }
+
+    .key.action {
+      color: #fff;
+      background: #1d232a;
+    }
+
+    .key.function {
+      color: var(--rose);
+    }
+
+    .key.constant {
+      color: var(--green);
+    }
+
+    .variable-popover {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      display: none;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+      padding: 10px;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow-hover);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+      z-index: 4;
+    }
+
+    .variable-popover.is-open {
+      display: grid;
+    }
+
+    .variable-popover button {
+      min-height: 38px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .key:hover,
+    .icon-btn:hover,
+    .command-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .key:active,
+    .icon-btn:active,
+    .command-btn:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-press);
+    }
+
+    #graph-view {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .equation-list {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .equation-row {
+      display: grid;
+      grid-template-columns: 14px 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 34px;
+      border-radius: 999px;
+    }
+
+    .equation-row input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.76);
+      outline: none;
+      font-family: var(--mono);
+    }
+
+    .graph-pane {
+      min-height: min(68svh, 620px);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      overflow: hidden;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 360px;
+      background:
+        linear-gradient(rgba(29, 35, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(29, 35, 42, 0.035) 1px, transparent 1px),
+        rgba(255, 255, 255, 0.48);
+      background-size: 36px 36px;
+      touch-action: none;
+    }
+
+    #plot {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-hint {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.82rem;
+      pointer-events: none;
+    }
+
+    .graph-controls {
+      border-width: 1px 0 0;
+      border-radius: 0;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.56);
+    }
+
+    .viewport-readout {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+    }
+
+    .test-panel {
+      display: none;
+      padding: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+    }
+
+    .test-panel.is-visible {
+      display: block;
+    }
+
+    .error {
+      color: var(--rose);
+    }
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .tab-bar,
+      .segmented,
+      .install-area,
+      .paper-display,
+      .steps-panel,
+      .keypad,
+      .graph-pane,
+      .equation-list,
+      .graph-controls,
+      .test-panel {
+        background: var(--glass-solid);
+      }
+    }
+
+    @media (min-width: 720px) {
+      #calc-view {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+        align-items: start;
+      }
+
+      .steps-panel {
+        position: sticky;
+        top: 16px;
+        max-height: calc(100svh - 132px);
+      }
+
+      #graph-view {
+        grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .tab-bar,
+      .install-area {
+        width: 100%;
+      }
+
+      .tab-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .key-grid {
+        gap: 7px;
+      }
+
+      .keypad-head .segmented {
+        width: 100%;
+        grid-auto-flow: row;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .segmented button {
+        min-width: 0;
+        padding: 0 4px;
+        font-size: 0.88rem;
+      }
+
+      .key {
+        min-height: 49px;
+      }
+
+      .result-line {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .result-line output {
+        text-align: left;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Matheo</h1>
+        <p>Offline paper math and graphing</p>
+      </div>
+      <nav class="tab-bar" aria-label="Views">
+        <button class="tab" type="button" data-tab="calc" aria-selected="true">Calc</button>
+        <button class="tab" type="button" data-tab="graph" aria-selected="false">Graph</button>
+      </nav>
+      <div class="install-area" id="install-area">
+        <button class="icon-btn" type="button" id="install-button" title="Install app" aria-label="Install app">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 19h14"/></svg>
+          Install
+        </button>
+      </div>
+    </header>
+
+    <section class="view is-active" id="calc-view" aria-label="Matheo calculator">
+      <div class="calc-main">
+        <section class="paper-display" aria-label="Expression display">
+          <div class="expression-row" id="paper-output">
+            <div class="placeholder">Tap keys or type an expression</div>
+          </div>
+          <textarea class="raw-input" id="expression-input" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off" inputmode="text" aria-label="Expression input" placeholder="Example: (3/4 + sqrt(16))^2"></textarea>
+          <div class="result-line">
+            <div class="result-meta">
+              <span id="status-line">Ready</span>
+              <button class="graph-link" type="button" id="open-graph-link">Graph</button>
+            </div>
+            <output id="result-output" aria-live="polite">0</output>
+          </div>
+        </section>
+
+        <section class="keypad" aria-label="Keypad">
+          <div class="keypad-head">
+            <div class="segmented" aria-label="Keypad layer">
+              <button type="button" data-layer="basic" aria-pressed="true">Basic</button>
+              <button type="button" data-layer="intermediate" aria-pressed="false">More</button>
+              <button type="button" data-layer="advanced" aria-pressed="false">Advanced</button>
+              <button type="button" data-layer="calculus" aria-pressed="false">Calc</button>
+              <button type="button" data-layer="logic" aria-pressed="false">Logic</button>
+              <button type="button" data-layer="symbols" aria-pressed="false">Symbols</button>
+            </div>
+            <button class="command-btn" type="button" id="copy-result" title="Copy result">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="2"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></svg>
+              Copy
+            </button>
+          </div>
+          <div class="keypad-wrap">
+            <div class="key-grid" id="key-grid"></div>
+            <div class="variable-popover" id="variable-popover" aria-label="Variable picker"></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="steps-panel" aria-label="Simplification steps">
+        <div class="panel-title">
+          <h2>Steps</h2>
+          <span id="step-count">0</span>
+        </div>
+        <div id="steps-output">
+          <div class="step-rule">No simplification steps yet.</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="view" id="graph-view" aria-label="Graph">
+      <aside class="equation-list">
+        <div class="panel-title">
+          <h2>Equations</h2>
+          <button class="icon-btn" type="button" id="add-equation" title="Add equation" aria-label="Add equation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          </button>
+        </div>
+        <div id="equations"></div>
+      </aside>
+
+      <section class="graph-pane">
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas id="plot" aria-label="Function plot"></canvas>
+          <div class="graph-hint">Drag to pan. Wheel or pinch to zoom.</div>
+        </div>
+        <div class="graph-controls">
+          <div class="viewport-readout" id="viewport-readout"></div>
+          <div>
+            <button class="command-btn" type="button" id="fit-graph">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+              Reset
+            </button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <pre class="test-panel" id="test-panel" aria-live="polite"></pre>
+  </main>
+
+  <script type="module">
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+    const formatNumber = value => {
+      if (typeof value === 'bigint') return value.toString();
+      if (!Number.isFinite(value)) return String(value);
+      if (Math.abs(value) < 1e-12) return '0';
+      if (Math.abs(value) >= 1e9 || Math.abs(value) < 1e-6) return value.toExponential(8).replace(/0+e/, 'e');
+      return Number(value.toPrecision(12)).toString();
+    };
+
+    const gcd = (a, b) => {
+      a = Math.abs(Math.trunc(a));
+      b = Math.abs(Math.trunc(b));
+      while (b) [a, b] = [b, a % b];
+      return a || 1;
+    };
+
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const astText = ast => Renderer.toText(ast);
+    const normalizeMathInput = input => input
+      .replace(/[−–—]/g, '-')
+      .replace(/[×·∙⋅]/g, '*')
+      .replace(/[÷]/g, '/')
+      .replace(/√/g, 'sqrt')
+      .replace(/π/g, 'pi')
+      .replace(/θ/g, 't')
+      .replace(/φ/g, 'p')
+      .replace(/α/g, 'a')
+      .replace(/β/g, 'b')
+      .replace(/γ/g, 'g')
+      .replace(/δ/g, 'd')
+      .replace(/λ/g, 'l')
+      .replace(/μ/g, 'm')
+      .replace(/σ/g, 's')
+      .replace(/ω/g, 'w')
+      .replace(/∞/g, 'Infinity')
+      .replace(/∧/g, ' and ')
+      .replace(/∨/g, ' or ')
+      .replace(/¬/g, 'not ')
+      .replace(/≤/g, '<=')
+      .replace(/≥/g, '>=')
+      .replace(/≠/g, '!=')
+      .replace(/≡/g, '==')
+      .replace(/²/g, '^2')
+      .replace(/³/g, '^3');
+    const graphExpressionOf = expression => normalizeMathInput(expression.trim()).replace(/^y\s*=\s*/i, '');
+    const isEquationExpression = expression => {
+      const normalized = normalizeMathInput(expression.trim());
+      return !/^y\s*=/.test(normalized) && /(?:^|[^=!<>])=(?!=)|==/.test(normalized);
+    };
+    const isGraphExpression = expression => {
+      const normalized = normalizeMathInput(expression.trim());
+      return /^y\s*=/.test(normalized) || (!isEquationExpression(normalized) && /\bx\b/.test(normalized));
+    };
+
+    const Store = (() => {
+      const state = {
+        tab: 'calc',
+        expression: '',
+        selectionStart: 0,
+        selectionEnd: 0,
+        ast: null,
+        simplified: null,
+        steps: [],
+        value: 0,
+        error: '',
+        layer: 'basic',
+        calcGraphId: crypto.randomUUID(),
+        equationSolved: false,
+        equations: [
+          { id: crypto.randomUUID(), expr: 'sin(x)', color: '#4f7ee8' },
+          { id: crypto.randomUUID(), expr: 'x^2/4 - 2', color: '#d95d76' }
+        ],
+        viewport: { xMin: -10, xMax: 10, yMin: -7, yMax: 7 },
+        autoGraph: false
+      };
+      const subscribers = new Map();
+      const notify = key => (subscribers.get(key) || new Set()).forEach(fn => fn(state[key], state));
+      return {
+        get: key => state[key],
+        snapshot: () => state,
+        set(key, value) {
+          state[key] = value;
+          notify(key);
+        },
+        patch(patch) {
+          Object.assign(state, patch);
+          Object.keys(patch).forEach(notify);
+        },
+        subscribe(key, fn) {
+          if (!subscribers.has(key)) subscribers.set(key, new Set());
+          subscribers.get(key).add(fn);
+          fn(state[key], state);
+          return () => subscribers.get(key).delete(fn);
+        }
+      };
+    })();
+
+    const Lexer = (() => {
+      const names = new Set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'sqrt', 'root', 'log', 'ln', 'exp', 'abs', 'floor', 'ceil', 'round', 'min', 'max', 'sum', 'ncr', 'npr', 'deriv', 'integral', 'limit']);
+      const orderedNames = [...names].sort((a, b) => b.length - a.length);
+      const constants = new Set(['pi', 'e']);
+      function pushWord(word, out) {
+        let offset = 0;
+        while (offset < word.length) {
+          const rest = word.slice(offset);
+          const fn = orderedNames.find(name => rest.startsWith(name));
+          if (fn) {
+            out.push({ type: 'name', name: fn });
+            offset += fn.length;
+            continue;
+          }
+          if (rest.startsWith('pi')) {
+            out.push({ type: 'const', name: 'pi' });
+            offset += 2;
+            continue;
+          }
+          const char = word[offset];
+          out.push(char === 'e' ? { type: 'const', name: 'e' } : { type: 'var', name: char });
+          offset += 1;
+        }
+      }
+      function tokenize(input) {
+        const src = normalizeMathInput(input);
+        const out = [];
+        let i = 0;
+        while (i < src.length) {
+          const ch = src[i];
+          if (/\s/.test(ch)) {
+            i += 1;
+            continue;
+          }
+          if (/\d|\./.test(ch)) {
+            let start = i;
+            let dots = 0;
+            while (i < src.length && /[\d.]/.test(src[i])) {
+              if (src[i] === '.') dots += 1;
+              if (dots > 1) throw new Error('Invalid number');
+              i += 1;
+            }
+            out.push({ type: 'number', value: Number(src.slice(start, i)), raw: src.slice(start, i) });
+            continue;
+          }
+          if (/[a-zA-Zπ]/.test(ch)) {
+            let start = i;
+            if (ch === 'π') {
+              i += 1;
+              out.push({ type: 'const', name: 'pi' });
+              continue;
+            }
+            while (i < src.length && /[a-zA-Z]/.test(src[i])) i += 1;
+            const name = src.slice(start, i).toLowerCase();
+            if (name === 'infinity') out.push({ type: 'infinity' });
+            else if (name === 'true' || name === 'false') out.push({ type: 'bool', value: name === 'true' });
+            else if (name === 'and' || name === 'or' || name === 'not') out.push({ type: name });
+            else if (names.has(name)) out.push({ type: 'name', name });
+            else if (constants.has(name)) out.push({ type: 'const', name });
+            else if (name === 'x') out.push({ type: 'var', name: 'x' });
+            else pushWord(name, out);
+            continue;
+          }
+          if ((ch === '>' || ch === '<' || ch === '=' || ch === '!') && src[i + 1] === '=') {
+            out.push({ type: ch + '=' });
+            i += 2;
+            continue;
+          }
+          if (ch === '=') {
+            out.push({ type: '==' });
+            i += 1;
+            continue;
+          }
+          if (ch === '>' || ch === '<') {
+            out.push({ type: ch });
+            i += 1;
+            continue;
+          }
+          if (ch === '&' && src[i + 1] === '&') {
+            out.push({ type: 'and' });
+            i += 2;
+            continue;
+          }
+          if (ch === '|' && src[i + 1] === '|') {
+            out.push({ type: 'or' });
+            i += 2;
+            continue;
+          }
+          if ('+-*/^(),!'.includes(ch)) {
+            out.push({ type: ch });
+            i += 1;
+            continue;
+          }
+          throw new Error(`Unexpected character "${ch}"`);
+        }
+        out.push({ type: 'eof' });
+        return out;
+      }
+      return { tokenize };
+    })();
+
+    const Parser = (() => {
+      const infixBp = {
+        or: [3, 4],
+        and: [4, 5],
+        '==': [7, 8],
+        '!=': [7, 8],
+        '>': [7, 8],
+        '<': [7, 8],
+        '>=': [7, 8],
+        '<=': [7, 8],
+        '+': [10, 11],
+        '-': [10, 11],
+        '*': [20, 21],
+        '/': [20, 21],
+        '^': [31, 30]
+      };
+      const implicitStarts = new Set(['number', 'var', 'const', 'bool', 'name', '(']);
+      class ParserImpl {
+        constructor(tokens) {
+          this.tokens = tokens;
+          this.i = 0;
+        }
+        peek() {
+          return this.tokens[this.i] || { type: 'eof' };
+        }
+        eat(type) {
+          const token = this.peek();
+          if (token.type !== type) throw new Error(`Expected "${type}"`);
+          this.i += 1;
+          return token;
+        }
+        parse() {
+          const ast = this.expr(0);
+          if (this.peek().type !== 'eof') throw new Error(`Unexpected token "${this.peek().type}"`);
+          return ast;
+        }
+        expr(minBp) {
+          let left = this.prefix();
+          while (true) {
+            const token = this.peek();
+            if (token.type === '!') {
+              this.i += 1;
+              left = { type: 'factorial', value: left };
+              continue;
+            }
+            if (implicitStarts.has(token.type) && token.type !== 'eof' && token.type !== ')' && token.type !== ',') {
+              const [lbp, rbp] = [24, 25];
+              if (lbp < minBp) break;
+              left = { type: 'bin', op: '*', left, right: this.expr(rbp), implicit: true };
+              continue;
+            }
+            const bp = infixBp[token.type];
+            if (!bp) break;
+            const [lbp, rbp] = bp;
+            if (lbp < minBp) break;
+            this.i += 1;
+            const right = this.expr(rbp);
+            left = token.type === '/' ? { type: 'frac', num: left, den: right } : { type: 'bin', op: token.type, left, right };
+          }
+          return left;
+        }
+        prefix() {
+          const token = this.peek();
+          this.i += 1;
+          if (token.type === 'number') return { type: 'num', value: token.value };
+          if (token.type === 'bool') return { type: 'bool', value: token.value };
+          if (token.type === 'var') return { type: 'var', name: token.name };
+          if (token.type === 'const') return { type: 'const', name: token.name };
+          if (token.type === 'infinity') return { type: 'infinity' };
+          if (token.type === '+') return { type: 'unary', op: '+', value: this.expr(40) };
+          if (token.type === '-') return { type: 'unary', op: '-', value: this.expr(40) };
+          if (token.type === 'not') return { type: 'unary', op: 'not', value: this.expr(40) };
+          if (token.type === '(') {
+            const inner = this.expr(0);
+            this.eat(')');
+            return inner;
+          }
+          if (token.type === 'name') {
+            if (this.peek().type === '(') {
+              this.i += 1;
+              const args = [];
+              if (this.peek().type !== ')') {
+                do {
+                  args.push(this.expr(0));
+                  if (this.peek().type !== ',') break;
+                  this.i += 1;
+                } while (true);
+              }
+              this.eat(')');
+              return { type: 'func', name: token.name, args };
+            }
+            return { type: 'func', name: token.name, args: [this.expr(40)] };
+          }
+          throw new Error(`Unexpected token "${token.type}"`);
+        }
+      }
+      function parse(input) {
+        return new ParserImpl(Lexer.tokenize(input)).parse();
+      }
+      return { parse };
+    })();
+
+    const Evaluator = (() => {
+      const factorial = n => {
+        if (!Number.isInteger(n) || n < 0) throw new Error('Factorial needs a non-negative integer');
+        if (n > 170) {
+          let out = 1n;
+          for (let i = 2n; i <= BigInt(n); i += 1n) out *= i;
+          return out;
+        }
+        let out = 1;
+        for (let i = 2; i <= n; i += 1) out *= i;
+        return out;
+      };
+      const choose = (n, r) => {
+        if (![n, r].every(Number.isInteger) || n < 0 || r < 0 || r > n) throw new Error('nCr needs integers with 0 <= r <= n');
+        r = Math.min(r, n - r);
+        let result = 1;
+        for (let i = 1; i <= r; i += 1) result = result * (n - r + i) / i;
+        return result;
+      };
+      const perm = (n, r) => {
+        if (![n, r].every(Number.isInteger) || n < 0 || r < 0 || r > n) throw new Error('nPr needs integers with 0 <= r <= n');
+        let result = 1;
+        for (let i = 0; i < r; i += 1) result *= n - i;
+        return result;
+      };
+      const truthy = value => Boolean(value);
+      const nearlyEqual = (a, b) => {
+        if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) <= 1e-12;
+        return a === b;
+      };
+      const cleanNumeric = value => Number.isFinite(value) && Math.abs(value - Math.round(value)) <= 1e-9 ? Math.round(value) : value;
+      const evalAtX = (node, x, scope) => evalAst(node, { ...scope, x });
+      function evalCalculus(ast, scope) {
+        const [expr, aNode, bNode] = ast.args;
+        if (ast.name === 'deriv') {
+          if (ast.args.length !== 2) throw new Error('deriv needs expression and x value');
+          const at = evalAst(aNode, scope);
+          const h = Math.max(1e-5, Math.abs(at) * 1e-5);
+          return cleanNumeric((evalAtX(expr, at + h, scope) - evalAtX(expr, at - h, scope)) / (2 * h));
+        }
+        if (ast.name === 'integral') {
+          if (ast.args.length === 1) throw new Error('Indefinite integral stays symbolic');
+          if (ast.args.length !== 3) throw new Error('integral needs expression, start, and end');
+          const start = evalAst(aNode, scope);
+          const end = evalAst(bNode, scope);
+          const n = 512;
+          const h = (end - start) / n;
+          let total = evalAtX(expr, start, scope) + evalAtX(expr, end, scope);
+          for (let i = 1; i < n; i += 1) {
+            total += (i % 2 ? 4 : 2) * evalAtX(expr, start + h * i, scope);
+          }
+          return cleanNumeric(total * h / 3);
+        }
+        if (ast.name === 'limit') {
+          if (ast.args.length !== 2) throw new Error('limit needs expression and x value');
+          const at = evalAst(aNode, scope);
+          const base = Math.max(1e-4, Math.abs(at) * 1e-4);
+          const samples = [base, base / 10, base / 100, base / 1000].map(h => {
+            const left = evalAtX(expr, at - h, scope);
+            const right = evalAtX(expr, at + h, scope);
+            return { left, right, avg: (left + right) / 2 };
+          }).filter(item => Number.isFinite(item.left) && Number.isFinite(item.right));
+          if (!samples.length) return NaN;
+          const best = samples[samples.length - 1];
+          const tolerance = Math.max(1e-6, Math.abs(best.avg) * 1e-6);
+          return Math.abs(best.left - best.right) <= tolerance ? cleanNumeric(best.avg) : NaN;
+        }
+        throw new Error(`Unsupported calculus function ${ast.name}`);
+      }
+      function evalAst(ast, scope = {}) {
+        switch (ast.type) {
+          case 'num': return ast.value;
+          case 'bool': return ast.value;
+          case 'var':
+            if (ast.name in scope) return scope[ast.name];
+            throw new Error(`Missing value for ${ast.name}`);
+          case 'const': return ast.name === 'pi' ? Math.PI : Math.E;
+          case 'infinity': return Infinity;
+          case 'unary':
+            if (ast.op === 'not') return !truthy(evalAst(ast.value, scope));
+            return ast.op === '-' ? -evalAst(ast.value, scope) : evalAst(ast.value, scope);
+          case 'bin': {
+            const a = evalAst(ast.left, scope);
+            const b = evalAst(ast.right, scope);
+            if (ast.op === 'and') return truthy(a) && truthy(b);
+            if (ast.op === 'or') return truthy(a) || truthy(b);
+            if (ast.op === '==') return nearlyEqual(a, b);
+            if (ast.op === '!=') return !nearlyEqual(a, b);
+            if (ast.op === '>') return a > b;
+            if (ast.op === '<') return a < b;
+            if (ast.op === '>=') return a >= b;
+            if (ast.op === '<=') return a <= b;
+            if (typeof a === 'bigint' || typeof b === 'bigint') throw new Error('BigInt cannot be used in decimal operations');
+            if (ast.op === '+') return a + b;
+            if (ast.op === '-') return a - b;
+            if (ast.op === '*') return a * b;
+            if (ast.op === '^') return Math.pow(a, b);
+            throw new Error(`Unsupported operator ${ast.op}`);
+          }
+          case 'frac': {
+            const a = evalAst(ast.num, scope);
+            const b = evalAst(ast.den, scope);
+            if (b === 0) return a >= 0 ? Infinity : -Infinity;
+            return a / b;
+          }
+          case 'factorial': return factorial(evalAst(ast.value, scope));
+          case 'func': {
+            if (['deriv', 'integral', 'limit'].includes(ast.name)) return evalCalculus(ast, scope);
+            const args = ast.args.map(arg => evalAst(arg, scope));
+            const [a, b] = args;
+            const unary = new Set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'sqrt', 'log', 'ln', 'exp', 'abs', 'floor', 'ceil', 'round']);
+            const binary = new Set(['root', 'ncr', 'npr', 'min', 'max']);
+            if (unary.has(ast.name) && args.length !== 1) throw new Error(`${ast.name} needs one argument`);
+            if (binary.has(ast.name) && args.length !== 2) throw new Error(`${ast.name} needs two arguments`);
+            const fns = {
+              sin: Math.sin, cos: Math.cos, tan: Math.tan,
+              sec: x => 1 / Math.cos(x), csc: x => 1 / Math.sin(x), cot: x => 1 / Math.tan(x),
+              asin: Math.asin, acos: Math.acos, atan: Math.atan,
+              sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+              sqrt: Math.sqrt, ln: Math.log,
+              exp: Math.exp,
+              log: x => Math.log10(x),
+              abs: Math.abs, floor: Math.floor, ceil: Math.ceil, round: Math.round,
+              min: Math.min, max: Math.max,
+              root: (n, x) => Math.pow(x, 1 / n),
+              ncr: choose,
+              npr: perm
+            };
+            if (!fns[ast.name]) throw new Error(`Unsupported function ${ast.name}`);
+            return fns[ast.name](a, b);
+          }
+          default:
+            throw new Error(`Cannot evaluate ${ast.type}`);
+        }
+      }
+      return { evalAst };
+    })();
+
+    const Simplifier = (() => {
+      const isNum = node => node && node.type === 'num' && Number.isFinite(node.value);
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const num = value => ({ type: 'num', value });
+      const variable = name => ({ type: 'var', name });
+      const bin = (op, left, right) => ({ type: 'bin', op, left, right });
+      const frac = (numNode, denNode) => ({ type: 'frac', num: numNode, den: denNode });
+      const fn = (name, args) => ({ type: 'func', name, args });
+      const isX = node => node && node.type === 'var' && node.name === 'x';
+      const withConstant = node => bin('+', node, variable('C'));
+      function integrateNode(node) {
+        if (isNum(node)) return bin('*', node, variable('x'));
+        if (isX(node)) return frac(bin('^', variable('x'), num(2)), num(2));
+        if (node.type === 'unary' && node.op === '-') return { type: 'unary', op: '-', value: integrateNode(node.value) };
+        if (node.type === 'bin') {
+          if (node.op === '+') return bin('+', integrateNode(node.left), integrateNode(node.right));
+          if (node.op === '-') return bin('-', integrateNode(node.left), integrateNode(node.right));
+          if (node.op === '*' && isNum(node.left)) return bin('*', node.left, integrateNode(node.right));
+          if (node.op === '*' && isNum(node.right)) return bin('*', node.right, integrateNode(node.left));
+          if (node.op === '^' && isX(node.left) && isNum(node.right)) {
+            const power = node.right.value;
+            if (power === -1) return fn('ln', [fn('abs', [variable('x')])]);
+            return frac(bin('^', variable('x'), num(power + 1)), num(power + 1));
+          }
+        }
+        if (node.type === 'frac' && isNum(node.num) && isX(node.den)) {
+          return bin('*', node.num, fn('ln', [fn('abs', [variable('x')])]));
+        }
+        if (node.type === 'func' && node.args.length === 1 && isX(node.args[0])) {
+          if (node.name === 'sin') return { type: 'unary', op: '-', value: fn('cos', [variable('x')]) };
+          if (node.name === 'cos') return fn('sin', [variable('x')]);
+          if (node.name === 'exp') return fn('exp', [variable('x')]);
+        }
+        throw new Error('Indefinite integral is not supported for this expression');
+      }
+      function withStep(before, after, rule, steps) {
+        if (!same(before, after)) steps.push({ before: clone(before), after: clone(after), rule });
+        return after;
+      }
+      function simplifyNode(node, steps) {
+        const before = clone(node);
+        let next = node;
+        switch (node.type) {
+          case 'unary':
+            next = { ...node, value: simplifyNode(node.value, steps) };
+            if (isNum(next.value)) next = { type: 'num', value: next.op === '-' ? -next.value.value : next.value.value };
+            return withStep(before, next, 'Resolve unary sign', steps);
+          case 'frac': {
+            const num = simplifyNode(node.num, steps);
+            const den = simplifyNode(node.den, steps);
+            next = { type: 'frac', num, den };
+            if (isNum(num) && isNum(den)) {
+              if (Number.isInteger(num.value) && Number.isInteger(den.value) && den.value !== 0) {
+                const g = gcd(num.value, den.value);
+                const sign = den.value < 0 ? -1 : 1;
+                const n = sign * num.value / g;
+                const d = Math.abs(den.value / g);
+                next = d === 1 ? { type: 'num', value: n } : { type: 'frac', num: { type: 'num', value: n }, den: { type: 'num', value: d } };
+                return withStep(before, next, 'Reduce fraction', steps);
+              }
+              next = { type: 'num', value: num.value / den.value };
+              return withStep(before, next, 'Evaluate numeric fraction', steps);
+            }
+            if (isNum(num) && num.value === 0) return withStep(before, { type: 'num', value: 0 }, 'Zero numerator', steps);
+            if (isNum(den) && den.value === 1) return withStep(before, num, 'Divide by one', steps);
+            return withStep(before, next, 'Simplify fraction terms', steps);
+          }
+          case 'bin': {
+            const left = simplifyNode(node.left, steps);
+            const right = simplifyNode(node.right, steps);
+            next = { ...node, left, right };
+            if (isNum(left) && isNum(right)) {
+              const value = Evaluator.evalAst(next);
+              next = typeof value === 'boolean' ? { type: 'bool', value } : { type: 'num', value };
+              return withStep(before, next, 'Evaluate constant expression', steps);
+            }
+            if (node.op === '+') {
+              if (isNum(left) && left.value === 0) return withStep(before, right, 'Remove additive zero', steps);
+              if (isNum(right) && right.value === 0) return withStep(before, left, 'Remove additive zero', steps);
+              if (same(left, right)) return withStep(before, { type: 'bin', op: '*', left: { type: 'num', value: 2 }, right: left }, 'Combine like terms', steps);
+            }
+            if (node.op === '-') {
+              if (isNum(right) && right.value === 0) return withStep(before, left, 'Remove subtractive zero', steps);
+              if (same(left, right)) return withStep(before, { type: 'num', value: 0 }, 'Cancel equal terms', steps);
+            }
+            if (node.op === '*') {
+              if ((isNum(left) && left.value === 0) || (isNum(right) && right.value === 0)) return withStep(before, { type: 'num', value: 0 }, 'Multiply by zero', steps);
+              if (isNum(left) && left.value === 1) return withStep(before, right, 'Remove multiplicative one', steps);
+              if (isNum(right) && right.value === 1) return withStep(before, left, 'Remove multiplicative one', steps);
+            }
+            if (node.op === '^') {
+              if (isNum(right) && right.value === 1) return withStep(before, left, 'Power of one', steps);
+              if (isNum(right) && right.value === 0) return withStep(before, { type: 'num', value: 1 }, 'Power of zero', steps);
+              if (isNum(left) && left.value === 1) return withStep(before, { type: 'num', value: 1 }, 'One to a power', steps);
+            }
+            return withStep(before, next, 'Simplify operands', steps);
+          }
+          case 'factorial':
+            next = { type: 'factorial', value: simplifyNode(node.value, steps) };
+            if (isNum(next.value) && next.value.value <= 20) next = { type: 'num', value: Evaluator.evalAst(next) };
+            return withStep(before, next, 'Evaluate factorial', steps);
+          case 'func':
+            next = { ...node, args: node.args.map(arg => simplifyNode(arg, steps)) };
+            if (next.name === 'integral' && next.args.length === 1) {
+              return withStep(before, withConstant(integrateNode(next.args[0])), 'Find antiderivative', steps);
+            }
+            if (next.args.every(isNum) && !['ncr', 'npr'].includes(next.name)) {
+              const value = Evaluator.evalAst(next);
+              if (Number.isFinite(value)) next = { type: 'num', value };
+              return withStep(before, next, 'Evaluate function constant', steps);
+            }
+            return withStep(before, next, 'Simplify function arguments', steps);
+          default:
+            return node;
+        }
+      }
+      function simplify(ast) {
+        const steps = [];
+        let result = simplifyNode(clone(ast), steps);
+        for (let i = 0; i < 3; i += 1) {
+          const prior = JSON.stringify(result);
+          result = simplifyNode(result, steps);
+          if (JSON.stringify(result) === prior) break;
+        }
+        return { result, steps };
+      }
+      return { simplify };
+    })();
+
+    const EquationSolver = (() => {
+      const clean = value => {
+        const nearZero = Math.abs(value) < 1e-10 ? 0 : value;
+        if (!Number.isFinite(nearZero)) return nearZero;
+        for (let den = 1; den <= 20; den += 1) {
+          const num = Math.round(nearZero * den);
+          if (Math.abs(nearZero - num / den) <= 1e-9) return num / den;
+        }
+        const rounded = Number(nearZero.toPrecision(12));
+        return Math.abs(rounded - Math.round(rounded)) <= 1e-9 ? Math.round(rounded) : rounded;
+      };
+      const complexValue = (re, im = 0) => ({ re: clean(re), im: clean(im) });
+      const valueNode = value => {
+        if (typeof value === 'number') return { type: 'num', value: clean(value) };
+        if (Math.abs(value.im) < 1e-9) return { type: 'num', value: clean(value.re) };
+        return { type: 'complex', re: clean(value.re), im: clean(value.im) };
+      };
+      const solution = value => ({ type: 'bin', op: '==', left: { type: 'var', name: 'x' }, right: valueNode(value) });
+      const cAdd = (a, b) => complexValue(a.re + b.re, a.im + b.im);
+      const cSub = (a, b) => complexValue(a.re - b.re, a.im - b.im);
+      const cMul = (a, b) => complexValue(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+      const cDiv = (a, b) => {
+        const den = b.re * b.re + b.im * b.im;
+        return complexValue((a.re * b.re + a.im * b.im) / den, (a.im * b.re - a.re * b.im) / den);
+      };
+      const cAbs = value => Math.hypot(value.re, value.im);
+      function containsVar(node, name = 'x') {
+        if (!node) return false;
+        if (node.type === 'var') return node.name === name;
+        if (node.type === 'unary') return containsVar(node.value, name);
+        if (node.type === 'factorial') return containsVar(node.value, name);
+        if (node.type === 'frac') return containsVar(node.num, name) || containsVar(node.den, name);
+        if (node.type === 'bin') return containsVar(node.left, name) || containsVar(node.right, name);
+        if (node.type === 'func') return node.args.some(arg => containsVar(arg, name));
+        return false;
+      }
+      function hasOtherVar(node) {
+        if (!node) return false;
+        if (node.type === 'var') return node.name !== 'x';
+        if (node.type === 'unary') return hasOtherVar(node.value);
+        if (node.type === 'factorial') return hasOtherVar(node.value);
+        if (node.type === 'frac') return hasOtherVar(node.num) || hasOtherVar(node.den);
+        if (node.type === 'bin') return hasOtherVar(node.left) || hasOtherVar(node.right);
+        if (node.type === 'func') return node.args.some(hasOtherVar);
+        return false;
+      }
+      function constantValue(node) {
+        if (containsVar(node)) return null;
+        try {
+          const value = Evaluator.evalAst(node);
+          return typeof value === 'number' && Number.isFinite(value) ? value : null;
+        } catch {
+          return null;
+        }
+      }
+      function trimPoly(poly) {
+        const out = poly.map(clean);
+        while (out.length > 1 && Math.abs(out[out.length - 1]) < 1e-10) out.pop();
+        return out;
+      }
+      const addPoly = (a, b) => trimPoly(Array.from({ length: Math.max(a.length, b.length) }, (_, i) => (a[i] || 0) + (b[i] || 0)));
+      const subPoly = (a, b) => trimPoly(Array.from({ length: Math.max(a.length, b.length) }, (_, i) => (a[i] || 0) - (b[i] || 0)));
+      const scalePoly = (poly, factor) => trimPoly(poly.map(value => value * factor));
+      function mulPoly(a, b) {
+        const out = Array(a.length + b.length - 1).fill(0);
+        a.forEach((av, ai) => b.forEach((bv, bi) => {
+          out[ai + bi] += av * bv;
+        }));
+        return trimPoly(out);
+      }
+      function powPoly(poly, power) {
+        let out = [1];
+        for (let i = 0; i < power; i += 1) out = mulPoly(out, poly);
+        return out;
+      }
+      function polyFromAst(node) {
+        const constant = constantValue(node);
+        if (constant !== null) return [constant];
+        if (node.type === 'var' && node.name === 'x') return [0, 1];
+        if (node.type === 'unary') {
+          const value = polyFromAst(node.value);
+          if (!value) return null;
+          return node.op === '-' ? scalePoly(value, -1) : value;
+        }
+        if (node.type === 'bin') {
+          const left = polyFromAst(node.left);
+          const right = polyFromAst(node.right);
+          if (node.op === '+' && left && right) return addPoly(left, right);
+          if (node.op === '-' && left && right) return subPoly(left, right);
+          if (node.op === '*' && left && right) return mulPoly(left, right);
+          if (node.op === '^' && left) {
+            const power = constantValue(node.right);
+            if (Number.isInteger(power) && power >= 0 && power <= 16) return powPoly(left, power);
+          }
+          return null;
+        }
+        if (node.type === 'frac') {
+          const num = polyFromAst(node.num);
+          const den = constantValue(node.den);
+          if (num && den !== null && den !== 0) return scalePoly(num, 1 / den);
+        }
+        return null;
+      }
+      function evalPolyComplex(poly, z) {
+        let out = complexValue(poly[poly.length - 1], 0);
+        for (let i = poly.length - 2; i >= 0; i -= 1) out = cAdd(cMul(out, z), complexValue(poly[i], 0));
+        return out;
+      }
+      function durandKerner(poly) {
+        const degree = poly.length - 1;
+        const leading = poly[degree];
+        const normalized = poly.map(value => value / leading);
+        const radius = 1 + Math.max(...normalized.slice(0, degree).map(Math.abs));
+        let roots = Array.from({ length: degree }, (_, i) => {
+          const angle = 2 * Math.PI * i / degree + 0.37;
+          return complexValue(radius * Math.cos(angle), radius * Math.sin(angle));
+        });
+        for (let iter = 0; iter < 160; iter += 1) {
+          let maxDelta = 0;
+          roots = roots.map((root, index) => {
+            let den = complexValue(1, 0);
+            roots.forEach((other, otherIndex) => {
+              if (index !== otherIndex) den = cMul(den, cSub(root, other));
+            });
+            if (cAbs(den) < 1e-14) den = complexValue(1e-14, 0);
+            const delta = cDiv(evalPolyComplex(normalized, root), den);
+            maxDelta = Math.max(maxDelta, cAbs(delta));
+            return cSub(root, delta);
+          });
+          if (maxDelta < 1e-11) break;
+        }
+        return roots.map(root => complexValue(root.re, root.im));
+      }
+      function polynomialRoots(poly) {
+        const trimmed = trimPoly(poly);
+        const degree = trimmed.length - 1;
+        if (degree <= 0) return [];
+        if (degree === 1) return [complexValue(-trimmed[0] / trimmed[1], 0)];
+        if (degree === 2) {
+          const [c, b, a] = trimmed;
+          const d = b * b - 4 * a * c;
+          if (d >= 0) return [complexValue((-b - Math.sqrt(d)) / (2 * a), 0), complexValue((-b + Math.sqrt(d)) / (2 * a), 0)];
+          return [complexValue(-b / (2 * a), -Math.sqrt(-d) / (2 * a)), complexValue(-b / (2 * a), Math.sqrt(-d) / (2 * a))];
+        }
+        return durandKerner(trimmed);
+      }
+      function polynomialSolve(ast) {
+        const left = polyFromAst(ast.left);
+        const right = polyFromAst(ast.right);
+        if (!left || !right) return null;
+        const poly = subPoly(left, right);
+        const roots = polynomialRoots(poly);
+        return roots.length ? roots : null;
+      }
+      function residual(ast, x) {
+        return Evaluator.evalAst(ast.left, { x }) - Evaluator.evalAst(ast.right, { x });
+      }
+      function addRoot(roots, value) {
+        if (!Number.isFinite(value)) return;
+        const next = clean(value);
+        if (!roots.some(root => Math.abs(root - next) < 1e-5)) roots.push(next);
+      }
+      function bisect(ast, a, b) {
+        let fa = residual(ast, a);
+        let fb = residual(ast, b);
+        if (!Number.isFinite(fa) || !Number.isFinite(fb)) return NaN;
+        for (let i = 0; i < 70; i += 1) {
+          const mid = (a + b) / 2;
+          const fm = residual(ast, mid);
+          if (!Number.isFinite(fm)) return NaN;
+          if (Math.abs(fm) < 1e-10) return mid;
+          if (Math.sign(fa) === Math.sign(fm)) {
+            a = mid;
+            fa = fm;
+          } else {
+            b = mid;
+            fb = fm;
+          }
+        }
+        return (a + b) / 2;
+      }
+      function scan(ast, span) {
+        const roots = [];
+        const steps = 1000;
+        let prevX = -span;
+        let prevY;
+        try {
+          prevY = residual(ast, prevX);
+          if (Number.isFinite(prevY) && Math.abs(prevY) < 1e-7) addRoot(roots, prevX);
+        } catch {
+          prevY = NaN;
+        }
+        for (let i = 1; i <= steps; i += 1) {
+          const x = -span + i * (2 * span / steps);
+          let y;
+          try {
+            y = residual(ast, x);
+          } catch {
+            prevX = x;
+            prevY = NaN;
+            continue;
+          }
+          if (Number.isFinite(y) && Math.abs(y) < 1e-7) addRoot(roots, x);
+          if (Number.isFinite(prevY) && Number.isFinite(y) && Math.sign(prevY) !== Math.sign(y)) {
+            addRoot(roots, bisect(ast, prevX, x));
+          }
+          prevX = x;
+          prevY = y;
+        }
+        return roots;
+      }
+      function toAst(roots) {
+        const normalized = roots.map(value => typeof value === 'number' ? complexValue(value, 0) : value);
+        const sorted = normalized.sort((a, b) => a.re - b.re || a.im - b.im);
+        return sorted.map(solution).reduce((left, right) => left ? { type: 'bin', op: 'or', left, right } : right, null);
+      }
+      function solve(ast) {
+        if (!ast || ast.type !== 'bin' || ast.op !== '==') return null;
+        if (!containsVar(ast)) return null;
+        if (hasOtherVar(ast)) throw new Error('Equation solver supports x only');
+        const polynomialRoots = polynomialSolve(ast);
+        if (polynomialRoots) return { result: toAst(polynomialRoots), roots: polynomialRoots };
+        for (const span of [10, 100, 1000]) {
+          const roots = scan(ast, span);
+          if (roots.length) return { result: toAst(roots), roots };
+        }
+        throw new Error('No real x solution found');
+      }
+      return { solve };
+    })();
+
+    const Renderer = (() => {
+      const functionNames = new Set(['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'sqrt', 'root', 'log', 'ln', 'exp', 'abs', 'floor', 'ceil', 'round', 'min', 'max', 'sum', 'ncr', 'npr', 'deriv', 'integral', 'limit']);
+      const el = (tag, className, text, attrs = {}) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+        return node;
+      };
+      const wrap = children => {
+        const row = el('span', 'math-row');
+        children.forEach(child => row.append(child));
+        return row;
+      };
+      const opSymbols = {
+        '*': '×',
+        and: '∧',
+        or: '∨',
+        not: '¬',
+        '<=': '≤',
+        '>=': '≥',
+        '!=': '≠',
+        '==': '='
+      };
+      const displayOp = op => opSymbols[op] || op;
+      const displayFunc = name => ({
+        deriv: 'd/dx',
+        integral: '∫',
+        floor: '⌊⌋',
+        ceil: '⌈⌉'
+      })[name] || name;
+      function complexText(ast) {
+        const re = Math.abs(ast.re) < 1e-10 ? 0 : ast.re;
+        const im = Math.abs(ast.im) < 1e-10 ? 0 : ast.im;
+        if (im === 0) return formatNumber(re);
+        const magnitude = Math.abs(im);
+        const imag = magnitude === 1 ? 'i' : `${formatNumber(magnitude)}i`;
+        if (re === 0) return im < 0 ? `-${imag}` : imag;
+        return `${formatNumber(re)} ${im < 0 ? '-' : '+'} ${imag}`;
+      }
+      const parens = node => wrap([el('span', 'op-cell', '('), render(node), el('span', 'op-cell', ')')]);
+      function renderBracketed(left, right, arg) {
+        const node = el('span', 'bracketed');
+        node.append(el('span', 'bracket-symbol', left), render(arg), el('span', 'bracket-symbol', right));
+        return node;
+      }
+      function renderIntegral(ast) {
+        const node = el('span', 'calculus-form');
+        node.append(el('span', 'calculus-symbol', '∫'));
+        if (ast.args.length >= 3) {
+          const bounds = el('span', 'integral-bounds');
+          bounds.append(render(ast.args[2]), render(ast.args[1]));
+          node.append(bounds);
+        }
+        node.append(render(ast.args[0]), el('span', 'differential', 'dx'));
+        return node;
+      }
+      function renderDerivative(ast) {
+        return wrap([el('span', 'calculus-symbol', 'd/dx'), render(ast.args[0]), el('span', 'op-cell', '|'), el('span', 'differential', 'x ='), render(ast.args[1])]);
+      }
+      function renderLimit(ast) {
+        const node = el('span', 'limit-container');
+        node.append(el('span', 'calculus-symbol', 'lim'));
+        const sub = el('span', 'limit-sub');
+        sub.append(el('span', '', 'x →'), render(ast.args[1]));
+        node.append(sub);
+        const wrapNode = el('span', 'calculus-form');
+        wrapNode.append(node, render(ast.args[0]));
+        return wrapNode;
+      }
+      function activeRange(selection, start, end) {
+        if (!selection) return false;
+        const { start: selStart, end: selEnd } = selection;
+        if (start === end) return selStart === start && selEnd === end;
+        if (selStart === selEnd) return selStart >= start && selStart <= end;
+        return selStart < end && selEnd > start;
+      }
+      function slotNode(selection, start, end, text = '') {
+        if (text.trim()) {
+          const rendered = renderSnippet(text);
+          if (!activeRange(selection, start, end)) return rendered;
+          const active = el('span', 'active-slot');
+          active.append(rendered);
+          return active;
+        }
+        const node = el('span', 'slot-box');
+        if (activeRange(selection, start, end)) node.classList.add('is-active');
+        return node;
+      }
+      function splitArgsWithRanges(source, startOffset = 0) {
+        const args = [];
+        let depth = 0;
+        let start = 0;
+        for (let i = 0; i <= source.length; i += 1) {
+          const ch = source[i];
+          if (ch === '(') depth += 1;
+          if (ch === ')') depth -= 1;
+          if ((ch === ',' && depth === 0) || i === source.length) {
+            args.push({ text: source.slice(start, i), start: startOffset + start, end: startOffset + i });
+            start = i + 1;
+          }
+        }
+        return args;
+      }
+      function renderSnippet(text) {
+        const trimmed = text.trim();
+        if (!trimmed) return el('span', 'slot-box');
+        try {
+          return render(Parser.parse(trimmed));
+        } catch {
+          const row = el('span', 'math-row');
+          try {
+            Lexer.tokenize(trimmed).forEach(token => {
+              if (token.type === 'eof') return;
+              if (token.type === 'name' && functionNames.has(token.name)) row.append(el('span', 'cell func-name', displayFunc(token.name)));
+              else if (token.type === 'number') row.append(el('span', 'cell', token.raw));
+              else if (token.type === 'var') row.append(el('span', 'cell', token.name));
+              else if (token.type === 'const') row.append(el('span', 'cell', token.name === 'pi' ? 'π' : 'e'));
+              else if (token.type === 'bool') row.append(el('span', 'cell', token.value ? 'true' : 'false'));
+              else if (token.type === 'infinity') row.append(el('span', 'cell', '∞'));
+              else row.append(el('span', 'op-cell', displayOp(token.type)));
+            });
+          } catch {
+            [...trimmed].forEach(char => row.append(el(/[a-z]/i.test(char) ? 'span' : 'span', /[a-z]/i.test(char) ? 'cell' : 'op-cell', char)));
+          }
+          return row;
+        }
+      }
+      function renderDraftFraction(expression, selection) {
+        const match = expression.match(/^\(([\s\S]*)\)\/\(([\s\S]*)\)$/);
+        if (!match) return null;
+        const numStart = 1;
+        const numEnd = numStart + match[1].length;
+        const denStart = numEnd + 3;
+        const denEnd = denStart + match[2].length;
+        const frac = el('span', 'frac');
+        const num = el('span', 'math-row');
+        const den = el('span', 'math-row');
+        num.append(slotNode(selection, numStart, numEnd, match[1]));
+        den.append(slotNode(selection, denStart, denEnd, match[2]));
+        num.dataset.range = `${numStart}-${numEnd}`;
+        den.dataset.range = `${denStart}-${denEnd}`;
+        frac.append(num, el('span', 'frac-rule'), den);
+        return frac;
+      }
+      function renderDraftPower(expression, selection) {
+        const match = expression.match(/^([\s\S]+)\^\(([\s\S]*)\)$/);
+        if (!match) return null;
+        const baseStart = 0;
+        const baseEnd = match[1].length;
+        const expStart = baseEnd + 2;
+        const expEnd = expStart + match[2].length;
+        const pow = el('span', 'pow');
+        const sup = el('span', 'sup');
+        pow.append(slotNode(selection, baseStart, baseEnd, match[1]), sup);
+        sup.append(slotNode(selection, expStart, expEnd, match[2]));
+        return pow;
+      }
+      function renderDraftRoot(expression, selection) {
+        if (!expression.startsWith('root(') || !expression.endsWith(')')) return null;
+        const args = splitArgsWithRanges(expression.slice(5, -1), 5);
+        if (args.length !== 2) return null;
+        const root = el('span', 'root');
+        const index = el('span', 'root-index');
+        index.append(slotNode(selection, args[0].start, args[0].end, args[0].text));
+        root.innerHTML = '<svg class="radical" viewBox="0 0 24 42" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 24l5 10L18 4"/></svg>';
+        const radicand = el('span', 'radicand');
+        radicand.append(slotNode(selection, args[1].start, args[1].end, args[1].text));
+        root.prepend(index);
+        root.append(radicand);
+        return root;
+      }
+      function renderDraftIntegral(expression, selection) {
+        if (!expression.startsWith('integral(') || !expression.endsWith(')')) return null;
+        const args = splitArgsWithRanges(expression.slice(9, -1), 9);
+        if (args.length !== 1 && args.length !== 3) return null;
+        const node = el('span', 'calculus-form');
+        node.append(el('span', 'calculus-symbol', '∫'));
+        if (args.length === 3) {
+          const bounds = el('span', 'integral-bounds');
+          bounds.append(slotNode(selection, args[2].start, args[2].end, args[2].text), slotNode(selection, args[1].start, args[1].end, args[1].text));
+          node.append(bounds);
+        }
+        node.append(slotNode(selection, args[0].start, args[0].end, args[0].text), el('span', 'differential', 'dx'));
+        return node;
+      }
+      function renderDraftLimit(expression, selection) {
+        if (!expression.startsWith('limit(') || !expression.endsWith(')')) return null;
+        const args = splitArgsWithRanges(expression.slice(6, -1), 6);
+        if (args.length !== 2) return null;
+        const node = el('span', 'limit-container');
+        const sub = el('span', 'limit-sub');
+        sub.append(el('span', '', 'x →'), slotNode(selection, args[1].start, args[1].end, args[1].text));
+        node.append(el('span', 'calculus-symbol', 'lim'), sub);
+        const wrapNode = el('span', 'calculus-form');
+        wrapNode.append(node, slotNode(selection, args[0].start, args[0].end, args[0].text));
+        return wrapNode;
+      }
+      function render(ast) {
+        if (!ast) return el('div', 'placeholder', 'Tap keys or type an expression');
+        switch (ast.type) {
+          case 'num': return el('span', 'cell', formatNumber(ast.value));
+          case 'bool': return el('span', 'cell', ast.value ? 'true' : 'false');
+          case 'var': return el('span', 'cell', ast.name);
+          case 'complex': return el('span', 'cell', complexText(ast));
+          case 'const': return el('span', 'cell', ast.name === 'pi' ? 'π' : 'e');
+          case 'infinity': return el('span', 'cell', '∞');
+          case 'unary': return wrap([el('span', 'op-cell', displayOp(ast.op)), render(ast.value)]);
+          case 'bin':
+            if (ast.op === '^') {
+              const pow = el('span', 'pow');
+              pow.append(render(ast.left), el('span', 'sup'));
+              pow.lastChild.append(render(ast.right));
+              return pow;
+            }
+            return wrap([render(ast.left), el('span', 'op-cell', ast.implicit ? '×' : displayOp(ast.op)), render(ast.right)]);
+          case 'frac': {
+            const frac = el('span', 'frac');
+            const num = el('span', 'math-row');
+            const den = el('span', 'math-row');
+            num.append(render(ast.num));
+            den.append(render(ast.den));
+            frac.append(num, el('span', 'frac-rule'), den);
+            return frac;
+          }
+          case 'factorial': return wrap([render(ast.value), el('span', 'op-cell', '!')]);
+          case 'func':
+            if (ast.name === 'sqrt') {
+              const root = el('span', 'root');
+              root.innerHTML = '<svg class="radical" viewBox="0 0 24 42" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 24l5 10L18 4"/></svg>';
+              const radicand = el('span', 'radicand');
+              radicand.append(render(ast.args[0]));
+              root.append(radicand);
+              return root;
+            }
+            if (ast.name === 'root') {
+              const root = el('span', 'root');
+              const index = el('span', 'root-index');
+              index.append(render(ast.args[0]));
+              root.innerHTML = '<svg class="radical" viewBox="0 0 24 42" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 24l5 10L18 4"/></svg>';
+              const radicand = el('span', 'radicand');
+              radicand.append(render(ast.args[1]));
+              root.prepend(index);
+              root.append(radicand);
+              return root;
+            }
+            if (ast.name === 'abs') {
+              const abs = el('span', 'abs');
+              abs.append(render(ast.args[0]));
+              return abs;
+            }
+            if (ast.name === 'floor') return renderBracketed('⌊', '⌋', ast.args[0]);
+            if (ast.name === 'ceil') return renderBracketed('⌈', '⌉', ast.args[0]);
+            if (ast.name === 'integral') return renderIntegral(ast);
+            if (ast.name === 'deriv') return renderDerivative(ast);
+            if (ast.name === 'limit') return renderLimit(ast);
+            return wrap([
+              el('span', 'cell func-name', displayFunc(ast.name)),
+              el('span', 'op-cell', '('),
+              ...ast.args.flatMap((arg, index) => index ? [el('span', 'op-cell', ','), render(arg)] : [render(arg)]),
+              el('span', 'op-cell', ')')
+            ]);
+          default:
+            return el('span', 'cell', '?');
+        }
+      }
+      function toText(ast) {
+        if (!ast) return '';
+        switch (ast.type) {
+          case 'num': return formatNumber(ast.value);
+          case 'bool': return ast.value ? 'true' : 'false';
+          case 'var': return ast.name;
+          case 'complex': return complexText(ast);
+          case 'const': return ast.name === 'pi' ? 'π' : 'e';
+          case 'infinity': return '∞';
+          case 'unary': return `${displayOp(ast.op)}${toText(ast.value)}`;
+          case 'bin': return ast.op === '^' ? `(${toText(ast.left)})^(${toText(ast.right)})` : `(${toText(ast.left)} ${displayOp(ast.op)} ${toText(ast.right)})`;
+          case 'frac': return `(${toText(ast.num)})/(${toText(ast.den)})`;
+          case 'factorial': return `${toText(ast.value)}!`;
+          case 'func':
+            if (ast.name === 'floor') return `⌊${toText(ast.args[0])}⌋`;
+            if (ast.name === 'ceil') return `⌈${toText(ast.args[0])}⌉`;
+            if (ast.name === 'root') return `${toText(ast.args[0])}√(${toText(ast.args[1])})`;
+            if (ast.name === 'integral') return `∫_${toText(ast.args[1])}^${toText(ast.args[2])} ${toText(ast.args[0])} dx`;
+            if (ast.name === 'deriv') return `d/dx ${toText(ast.args[0])} | x=${toText(ast.args[1])}`;
+            if (ast.name === 'limit') return `lim x→${toText(ast.args[1])} ${toText(ast.args[0])}`;
+            return `${displayFunc(ast.name)}(${ast.args.map(toText).join(', ')})`;
+          default: return '?';
+        }
+      }
+      function renderTemplate(expression, selection = null) {
+        return renderDraftFraction(expression, selection)
+          || renderDraftPower(expression, selection)
+          || renderDraftRoot(expression, selection)
+          || renderDraftIntegral(expression, selection)
+          || renderDraftLimit(expression, selection);
+      }
+      function renderDraft(expression, selection = null) {
+        const template = renderTemplate(expression, selection);
+        if (template) return template;
+        const row = el('span', 'math-row');
+        try {
+          Lexer.tokenize(expression).forEach(token => {
+            if (token.type === 'eof') return;
+            if (token.type === 'name' && functionNames.has(token.name)) row.append(el('span', 'cell func-name', displayFunc(token.name)));
+            else if (token.type === 'number') row.append(el('span', 'cell', token.raw));
+            else if (token.type === 'var') row.append(el('span', 'cell', token.name));
+            else if (token.type === 'const') row.append(el('span', 'cell', token.name === 'pi' ? 'π' : 'e'));
+            else if (token.type === 'bool') row.append(el('span', 'cell', token.value ? 'true' : 'false'));
+            else if (token.type === 'infinity') row.append(el('span', 'cell', '∞'));
+            else row.append(el('span', 'op-cell', displayOp(token.type)));
+          });
+        } catch {
+          [...expression].forEach(char => row.append(el(/[a-z]/i.test(char) ? 'span' : 'span', /[a-z]/i.test(char) ? 'cell' : 'op-cell', char)));
+        }
+        return row;
+      }
+      return { render, renderDraft, renderTemplate, toText };
+    })();
+
+    const Pipeline = (() => {
+      let timer = 0;
+      function runNow(expression) {
+        if (!expression.trim()) {
+          Store.patch({ ast: null, simplified: null, steps: [], value: 0, error: '', equationSolved: false });
+          return;
+        }
+        try {
+          const ast = Parser.parse(graphExpressionOf(expression));
+          let { result, steps } = Simplifier.simplify(ast);
+          let equationSolved = false;
+          const solved = EquationSolver.solve(result);
+          if (solved) {
+            result = solved.result;
+            steps = [...steps, { before: ast, after: result, rule: 'Solve equation for x' }];
+            equationSolved = true;
+          }
+          const hasVar = JSON.stringify(result).includes('"type":"var"');
+          let value;
+          try {
+            value = Evaluator.evalAst(result);
+          } catch (error) {
+            if (!hasVar) throw error;
+            value = NaN;
+          }
+          Store.patch({ ast, simplified: result, steps, value, error: '', equationSolved });
+        } catch (error) {
+          Store.patch({ ast: null, simplified: null, steps: [], value: 0, error: error.message, equationSolved: false });
+        }
+      }
+      function run(expression) {
+        clearTimeout(timer);
+        timer = setTimeout(() => runNow(expression), 50);
+      }
+      return { run, runNow };
+    })();
+
+    const Keypad = (() => {
+      const layers = {
+        basic: [
+          ['7', '8', '9', '(', ')'],
+          ['4', '5', '6', '×', '÷'],
+          ['1', '2', '3', '+', '-'],
+          ['0', '.', 'π', '^', '='],
+          ['C', '⌫', 'x', '√', 'Solve']
+        ],
+        intermediate: [
+          ['sin', 'cos', 'tan', 'log', 'ln'],
+          ['asin', 'acos', 'atan', 'abs', 'e'],
+          ['x²', 'x³', '1/x', 'nCr', 'nPr'],
+          ['(', ')', ',', '+', '-'],
+          ['C', '⌫', '×', '÷', 'Solve']
+        ],
+        advanced: [
+          ['a/b', 'x^n', 'ⁿ√', 'sqrt(', 'root('],
+          ['abs(', 'floor(', 'ceil(', 'sec(', 'csc('],
+          ['tanh(', 'exp(', 'min(', 'max(', 'round('],
+          ['x', ',', '(', ')', '!'],
+          ['C', '⌫', 'Next', '=', 'Solve']
+        ],
+        calculus: [
+          ['d/dx', '∫', 'lim', '∫a→b', 'lim→a'],
+          ['sin', 'cos', 'tan', 'ln', 'e'],
+          ['a/b', 'x^n', 'ⁿ√', 'x', 'π'],
+          [',', '+', '-', '*', '/'],
+          ['C', '⌫', 'Next', '=', 'Solve']
+        ],
+        logic: [
+          ['true', 'false', '∧', '∨', '¬'],
+          ['>', '<', '≥', '≤', '≡'],
+          ['≠', '(', ')', 'x', '0'],
+          ['1', '2', '3', '+', '-'],
+          ['C', '⌫', 'Graph', '=', 'Solve']
+        ]
+      };
+      layers.symbols = [
+        ['π', 'e', '∞', 'θ', 'φ'],
+        ['α', 'β', 'γ', 'δ', 'λ'],
+        ['μ', 'σ', 'ω', '√', '|x|'],
+        ['x²', 'x³', '1/x', 'nCr', 'nPr'],
+        ['C', '⌫', '×', '÷', 'Solve']
+      ];
+      const tokenMap = {
+        '×': '*', '÷': '/', 'π': 'pi', '√': 'sqrt()', '∞': 'Infinity',
+        '|x|': 'abs()',
+        '×': '*', '÷': '/', 'π': 'pi', '√': 'sqrt()',
+        'sin': 'sin()', 'cos': 'cos()', 'tan': 'tan()', 'log': 'log()', 'ln': 'ln()',
+        'asin': 'asin()', 'acos': 'acos()', 'atan': 'atan()', 'abs': 'abs()',
+        'sqrt(': 'sqrt()', 'root(': 'root()', 'abs(': 'abs()', 'sin(': 'sin()', 'cos(': 'cos()',
+        'tan(': 'tan()', 'log(': 'log()', 'ln(': 'ln()', 'ncr(': 'ncr()', 'npr(': 'npr()',
+        'sec(': 'sec()', 'csc(': 'csc()', 'cot(': 'cot()', 'sinh(': 'sinh()', 'cosh(': 'cosh()',
+        'tanh(': 'tanh()', 'exp(': 'exp()', 'floor(': 'floor()', 'ceil(': 'ceil()', 'round(': 'round()',
+        'min(': 'min()', 'max(': 'max()',
+        'nCr': 'ncr()', 'nPr': 'npr()',
+        'pi': 'pi',
+        'π': 'pi',
+        'd/dx': 'deriv(,x)',
+        '∫': 'integral()',
+        '∫a→b': 'integral(,0,1)',
+        'lim': 'limit(,0)',
+        'lim→a': 'limit(,0)',
+        'and': ' and ',
+        'or': ' or ',
+        'not': 'not ',
+        '∧': ' and ',
+        '∨': ' or ',
+        '¬': 'not ',
+        '≥': '>=',
+        '≤': '<=',
+        '≠': '!=',
+        '≡': '==',
+        'Graph': 'x'
+      };
+      const grid = $('#key-grid');
+      const popover = $('#variable-popover');
+      let holdTimer = 0;
+      function renderKeyLabel(btn, label) {
+        if (label !== 'a/b') {
+          btn.textContent = label;
+          return;
+        }
+        btn.setAttribute('aria-label', 'Fraction');
+        const frac = document.createElement('span');
+        frac.className = 'key-frac';
+        frac.setAttribute('aria-hidden', 'true');
+        frac.append(
+          Object.assign(document.createElement('span'), { className: 'frac-top', textContent: 'a' }),
+          Object.assign(document.createElement('span'), { className: 'frac-bottom', textContent: 'b' })
+        );
+        btn.append(frac);
+      }
+      function draw(layer) {
+        grid.replaceChildren();
+        layers[layer].flat().forEach(label => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'key';
+          if ('+-×÷^=,!()*/<>∧∨¬≤≥≠≡'.includes(label) || ['^2', '^3', '^(', '>=', '<=', '==', '!=', 'and', 'or', 'not', 'a/b', 'x^n'].includes(label)) btn.classList.add('operator');
+          if (['C', '⌫', 'Solve', 'Graph', 'Next'].includes(label)) btn.classList.add('action');
+          if (/sin|cos|tan|log|ln|sqrt|root|abs|nCr|nPr|√|ⁿ√|d\/dx|∫|lim/.test(label)) btn.classList.add('function');
+          if (['π', 'pi', 'e'].includes(label)) btn.classList.add('constant');
+          if (/sin|cos|tan|sec|csc|cot|sinh|cosh|tanh|log|ln|exp|sqrt|root|abs|floor|ceil|round|min|max|nCr|nPr|√|ⁿ√|\|x\||d\/dx|∫|lim/.test(label)) btn.classList.add('function');
+          if (['π', '∞'].includes(label)) btn.classList.add('constant');
+          if (label === '⌫') btn.classList.add('action');
+          if (label === 'x') btn.dataset.variableTrigger = 'true';
+          renderKeyLabel(btn, label);
+          btn.dataset.token = label;
+          grid.append(btn);
+        });
+      }
+      function drawVariablePicker() {
+        const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+        const greek = ['θ', 'φ', 'α', 'β', 'γ', 'δ', 'λ', 'μ', 'σ', 'ω'];
+        popover.replaceChildren();
+        [...letters, ...greek].forEach(symbol => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = symbol;
+          btn.dataset.variable = symbol;
+          popover.append(btn);
+        });
+      }
+      function showVariablePicker() {
+        drawVariablePicker();
+        popover.classList.add('is-open');
+      }
+      function hideVariablePicker() {
+        popover.classList.remove('is-open');
+      }
+      function getInput() {
+        return $('#expression-input');
+      }
+      function replaceRange(input, start, end, text, cursorOffset = text.length) {
+        const next = input.value.slice(0, start) + text + input.value.slice(end);
+        const cursor = start + cursorOffset;
+        input.value = next;
+        input.focus();
+        input.setSelectionRange(cursor, cursor);
+        Store.patch({ expression: next, selectionStart: cursor, selectionEnd: cursor });
+      }
+      function insertTemplate(template, cursorToken = '|') {
+        const input = getInput();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const selected = input.value.slice(start, end);
+        let text = template.replaceAll('{sel}', selected);
+        let cursor = text.indexOf(cursorToken);
+        if (cursor < 0) cursor = text.length;
+        text = text.replace(cursorToken, '');
+        replaceRange(input, start, end, text, cursor);
+      }
+      function insert(text) {
+        const input = getInput();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const emptyFirstArg = text.indexOf('(,');
+        const inside = text.includes('()') ? text.indexOf('()') + 1 : text.includes('(,)') ? text.indexOf('(,)') + 1 : emptyFirstArg >= 0 ? emptyFirstArg + 1 : text.length;
+        replaceRange(input, start, end, text, inside);
+      }
+      function insertFraction() {
+        const input = getInput();
+        const selected = input.value.slice(input.selectionStart, input.selectionEnd);
+        insertTemplate(selected ? '({sel})/(|)' : '(|)/()');
+      }
+      function insertPowerSlot() {
+        const input = getInput();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (start !== end) {
+          insertTemplate('({sel})^(|)');
+          return;
+        }
+        const termStart = previousTermStart(input.value, start);
+        insertTemplate(termStart === start ? 'x^(|)' : '^(|)');
+      }
+      function insertRootSlot() {
+        const input = getInput();
+        const selected = input.value.slice(input.selectionStart, input.selectionEnd);
+        insertTemplate(selected ? 'root(|,{sel})' : 'root(|,)');
+      }
+      function selectSlot(input, direction = 1) {
+        const value = input.value;
+        const cursor = direction > 0 ? input.selectionEnd : input.selectionStart;
+        const slots = [];
+        for (let i = 0; i <= value.length; i += 1) {
+          const prev = value[i - 1];
+          const next = value[i];
+          if ((prev === '(' || prev === ',') && (next === ',' || next === ')')) slots.push({ start: i, end: i });
+        }
+        const tokenPattern = /,-?\d+(?:\.\d+)?|,x(?=[,)])/g;
+        let match;
+        while ((match = tokenPattern.exec(value))) {
+          slots.push({ start: match.index + 1, end: match.index + match[0].length });
+        }
+        slots.sort((a, b) => a.start - b.start || a.end - b.end);
+        if (!slots.length) return false;
+        const nextSlot = direction > 0
+          ? slots.find(slot => slot.start > cursor || slot.end > cursor) || slots[0]
+          : [...slots].reverse().find(slot => slot.end < cursor || slot.start < cursor) || slots[slots.length - 1];
+        input.focus();
+        input.setSelectionRange(nextSlot.start, nextSlot.end);
+        Store.patch({ selectionStart: nextSlot.start, selectionEnd: nextSlot.end });
+        return true;
+      }
+      function previousTermStart(value, cursor) {
+        let i = cursor - 1;
+        while (i >= 0 && /\s/.test(value[i])) i -= 1;
+        if (i < 0) return cursor;
+        if (value[i] === ')') {
+          let depth = 1;
+          i -= 1;
+          while (i >= 0) {
+            if (value[i] === ')') depth += 1;
+            if (value[i] === '(') depth -= 1;
+            if (depth === 0) break;
+            i -= 1;
+          }
+          while (i > 0 && /[a-zA-Z]/.test(value[i - 1])) i -= 1;
+          return Math.max(i, 0);
+        }
+        while (i >= 0 && /[\d.a-zA-Zπ]/.test(value[i])) i -= 1;
+        return i + 1;
+      }
+      function applyPower(power) {
+        const input = getInput();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (start !== end) {
+          replaceRange(input, start, end, `(${input.value.slice(start, end)})^${power}`);
+          return;
+        }
+        const termStart = previousTermStart(input.value, start);
+        if (termStart === start) {
+          replaceRange(input, start, end, `x^${power}`);
+          return;
+        }
+        replaceRange(input, start, end, `^${power}`);
+      }
+      function reciprocal() {
+        const input = $('#expression-input');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (start !== end) {
+          const wrapped = `1/(${input.value.slice(start, end)})`;
+          replaceRange(input, start, end, wrapped, wrapped.length);
+          return;
+        }
+        replaceRange(input, start, end, '1/()', 3);
+      }
+      function backspace() {
+        const input = $('#expression-input');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (start === 0 && end === 0) return;
+        const next = start === end
+          ? input.value.slice(0, start - 1) + input.value.slice(end)
+          : input.value.slice(0, start) + input.value.slice(end);
+        const cursor = start === end ? start - 1 : start;
+        input.value = next;
+        input.focus();
+        input.setSelectionRange(Math.max(cursor, 0), Math.max(cursor, 0));
+        Store.patch({ expression: next, selectionStart: Math.max(cursor, 0), selectionEnd: Math.max(cursor, 0) });
+      }
+      function commitResult() {
+        const { value, error } = Store.snapshot();
+        if (!error && Number.isFinite(value)) {
+          $('#expression-input').value = formatNumber(value);
+          Store.patch({ expression: formatNumber(value), selectionStart: formatNumber(value).length, selectionEnd: formatNumber(value).length });
+        }
+      }
+      function syncSelection(input = getInput()) {
+        Store.patch({ selectionStart: input.selectionStart || 0, selectionEnd: input.selectionEnd || 0 });
+      }
+      function init() {
+        draw(Store.get('layer'));
+        $('.segmented').addEventListener('click', event => {
+          const btn = event.target.closest('button[data-layer]');
+          if (!btn) return;
+          Store.set('layer', btn.dataset.layer);
+        });
+        grid.addEventListener('click', event => {
+          const btn = event.target.closest('button[data-token]');
+          if (!btn) return;
+          const label = btn.dataset.token;
+          hideVariablePicker();
+          if (label === '⌫') {
+            backspace();
+            return;
+          }
+          if (label === 'Graph') {
+            Store.set('tab', 'graph');
+            return;
+          }
+          if (label === 'Next') {
+            selectSlot(getInput());
+            return;
+          }
+          if (label === 'a/b') {
+            insertFraction();
+            return;
+          }
+          if (label === 'x^n') {
+            insertPowerSlot();
+            return;
+          }
+          if (label === 'ⁿ√') {
+            insertRootSlot();
+            return;
+          }
+          if (label === 'x²') {
+            applyPower('2');
+            return;
+          }
+          if (label === 'x³') {
+            applyPower('3');
+            return;
+          }
+          if (label === 'x^2') {
+            applyPower('2');
+            return;
+          }
+          if (label === 'x^3') {
+            applyPower('3');
+            return;
+          }
+          if (label === 'C') {
+            $('#expression-input').value = '';
+            Store.patch({ expression: '', selectionStart: 0, selectionEnd: 0 });
+          } else if (label === '⌫') {
+            backspace();
+          } else if (label === 'Solve') {
+            commitResult();
+          } else if (label === 'x²' || label === '^2') {
+            applyPower('2');
+          } else if (label === 'x³' || label === '^3') {
+            applyPower('3');
+          } else if (label === '1/x') {
+            reciprocal();
+          } else {
+            insert(tokenMap[label] || label);
+          }
+        });
+        grid.addEventListener('pointerdown', event => {
+          const btn = event.target.closest('button[data-variable-trigger]');
+          if (!btn) return;
+          clearTimeout(holdTimer);
+          holdTimer = setTimeout(showVariablePicker, 420);
+        });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(type => {
+          grid.addEventListener(type, () => clearTimeout(holdTimer));
+        });
+        grid.addEventListener('contextmenu', event => {
+          const btn = event.target.closest('button[data-variable-trigger]');
+          if (!btn) return;
+          event.preventDefault();
+          showVariablePicker();
+        });
+        popover.addEventListener('click', event => {
+          const btn = event.target.closest('button[data-variable]');
+          if (!btn) return;
+          insert(btn.dataset.variable);
+          hideVariablePicker();
+        });
+        document.addEventListener('pointerdown', event => {
+          if (!event.target.closest('#variable-popover') && !event.target.closest('[data-variable-trigger]')) hideVariablePicker();
+        });
+        $('#expression-input').addEventListener('input', event => Store.patch({ expression: event.target.value, selectionStart: event.target.selectionStart || 0, selectionEnd: event.target.selectionEnd || 0 }));
+        $('#expression-input').addEventListener('keydown', event => {
+          if (event.key !== 'Tab') return;
+          if (!selectSlot(event.currentTarget, event.shiftKey ? -1 : 1)) return;
+          event.preventDefault();
+        });
+        ['click', 'keyup', 'select', 'mouseup'].forEach(type => {
+          $('#expression-input').addEventListener(type, event => syncSelection(event.currentTarget));
+        });
+        $('#copy-result').addEventListener('click', async () => {
+          const out = $('#result-output');
+          const text = out.dataset.copyText || out.textContent;
+          try {
+            await navigator.clipboard.writeText(text);
+            $('#status-line').textContent = 'Copied result';
+          } catch {
+            $('#status-line').textContent = 'Clipboard unavailable';
+          }
+        });
+        Store.subscribe('layer', layer => {
+          $$('.segmented button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layer === layer)));
+          draw(layer);
+        });
+      }
+      return { init };
+    })();
+
+    const CalcView = (() => {
+      function renderPaper() {
+        const { ast, error, expression, selectionStart, selectionEnd } = Store.snapshot();
+        const out = $('#paper-output');
+        out.replaceChildren();
+        if (error) {
+          out.append(Renderer.renderDraft(expression, { start: selectionStart, end: selectionEnd }));
+        } else if (!expression.trim()) {
+          out.append(Renderer.render(null));
+        } else {
+          out.append(Renderer.renderTemplate(expression, { start: selectionStart, end: selectionEnd }) || Renderer.render(ast));
+        }
+      }
+      function renderSteps(steps) {
+        $('#step-count').textContent = `${steps.length}`;
+        const out = $('#steps-output');
+        out.replaceChildren();
+        if (!steps.length) {
+          const empty = document.createElement('div');
+          empty.className = 'step-rule';
+          empty.textContent = 'No simplification steps yet.';
+          out.append(empty);
+          return;
+        }
+        steps.slice(-8).forEach(step => {
+          const row = document.createElement('div');
+          row.className = 'step';
+          const rule = document.createElement('div');
+          rule.className = 'step-rule';
+          rule.textContent = step.rule;
+          const math = document.createElement('div');
+          math.className = 'step-math';
+          math.append(Renderer.render(step.before), Object.assign(document.createElement('span'), { textContent: '→' }), Renderer.render(step.after));
+          row.append(rule, math);
+          out.append(row);
+        });
+      }
+      function init() {
+        $('#paper-output').addEventListener('click', event => {
+          const target = event.target.closest('[data-range]');
+          if (!target) return;
+          const [start, end] = target.dataset.range.split('-').map(Number);
+          const input = $('#expression-input');
+          input.focus();
+          input.setSelectionRange(start, end);
+          Store.patch({ selectionStart: start, selectionEnd: end });
+        });
+        Store.subscribe('expression', expression => Pipeline.run(expression));
+        ['ast', 'error', 'expression', 'selectionStart', 'selectionEnd'].forEach(key => Store.subscribe(key, renderPaper));
+        Store.subscribe('steps', renderSteps);
+        Store.subscribe('value', value => {
+          const { error, expression, simplified, equationSolved } = Store.snapshot();
+          const linkedToGraph = isGraphExpression(expression);
+          const resultOut = $('#result-output');
+          const resultText = error ? 'Error' : Number.isNaN(value) ? astText(simplified) : formatNumber(value);
+          $('#status-line').textContent = error || (!expression.trim() ? 'Ready' : equationSolved ? 'Equation solved' : linkedToGraph ? 'Linked to graph' : simplified && Number.isNaN(value) ? 'Symbolic expression' : 'Result');
+          resultOut.dataset.copyText = resultText;
+          resultOut.replaceChildren(error || !Number.isNaN(value) ? document.createTextNode(resultText) : Renderer.render(simplified));
+          $('#open-graph-link').classList.toggle('is-visible', linkedToGraph);
+          if (linkedToGraph && Store.get('autoGraph')) Store.set('tab', 'graph');
+        });
+        $('#open-graph-link').addEventListener('click', () => {
+          Store.set('autoGraph', true);
+          Store.set('tab', 'graph');
+        });
+      }
+      return { init };
+    })();
+
+    const Graph = (() => {
+      const palette = ['#4f7ee8', '#d95d76', '#5e9446', '#bb7d28', '#8066d6', '#2a8fb8'];
+      const canvas = $('#plot');
+      const wrap = $('#canvas-wrap');
+      let ctx;
+      let raf = 0;
+      let renderedEquationSignature = '';
+      const pointers = new Map();
+      let gesture = null;
+      const mathToPx = (x, y, vp, rect) => ({
+        x: (x - vp.xMin) / (vp.xMax - vp.xMin) * rect.width,
+        y: (vp.yMax - y) / (vp.yMax - vp.yMin) * rect.height
+      });
+      const pxToMath = (x, y, vp, rect) => ({
+        x: vp.xMin + x / rect.width * (vp.xMax - vp.xMin),
+        y: vp.yMax - y / rect.height * (vp.yMax - vp.yMin)
+      });
+      function compile(expr) {
+        const ast = Parser.parse(expr.replace(/^y\s*=\s*/i, ''));
+        return x => {
+          const y = Evaluator.evalAst(ast, { x });
+          return typeof y === 'boolean' ? Number(y) : y;
+        };
+      }
+      function resize() {
+        const rect = wrap.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        schedule();
+      }
+      function drawGrid(rect, vp) {
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        ctx.fillStyle = 'rgba(255,255,255,0.24)';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        const spanX = vp.xMax - vp.xMin;
+        const spanY = vp.yMax - vp.yMin;
+        const step = Math.pow(10, Math.floor(Math.log10(spanX / 8)));
+        const stepY = Math.pow(10, Math.floor(Math.log10(spanY / 8)));
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(29,35,42,0.09)';
+        ctx.beginPath();
+        for (let x = Math.ceil(vp.xMin / step) * step; x <= vp.xMax; x += step) {
+          const p = mathToPx(x, 0, vp, rect).x;
+          ctx.moveTo(p, 0);
+          ctx.lineTo(p, rect.height);
+        }
+        for (let y = Math.ceil(vp.yMin / stepY) * stepY; y <= vp.yMax; y += stepY) {
+          const p = mathToPx(0, y, vp, rect).y;
+          ctx.moveTo(0, p);
+          ctx.lineTo(rect.width, p);
+        }
+        ctx.stroke();
+        const origin = mathToPx(0, 0, vp, rect);
+        ctx.strokeStyle = 'rgba(29,35,42,0.34)';
+        ctx.beginPath();
+        ctx.moveTo(origin.x, 0);
+        ctx.lineTo(origin.x, rect.height);
+        ctx.moveTo(0, origin.y);
+        ctx.lineTo(rect.width, origin.y);
+        ctx.stroke();
+      }
+      function plotEquation(fn, color, rect, vp) {
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        let drawing = false;
+        let prev = null;
+        const annotations = [];
+        for (let px = 0; px <= rect.width; px += 1) {
+          const x = pxToMath(px, 0, vp, rect).x;
+          const y = fn(x);
+          const finite = Number.isFinite(y) && Math.abs(y) < 1e8;
+          if (!finite) {
+            drawing = false;
+            prev = null;
+            continue;
+          }
+          const p = mathToPx(x, y, vp, rect);
+          const jump = prev && Math.abs(p.y - prev.p.y) > rect.height * 0.75 && Math.sign(y) !== Math.sign(prev.y);
+          if (jump || p.y < -rect.height * 3 || p.y > rect.height * 4) {
+            drawing = false;
+            prev = { x, y, p };
+            continue;
+          }
+          if (!drawing) {
+            ctx.moveTo(p.x, p.y);
+            drawing = true;
+          } else {
+            ctx.lineTo(p.x, p.y);
+          }
+          if (prev && y === 0 || (prev && Math.sign(prev.y) !== Math.sign(y) && Math.abs(y - prev.y) < Math.abs(vp.yMax - vp.yMin))) {
+            annotations.push({ kind: 'zero', x, y: 0 });
+          }
+          if (prev && annotations.length < 6) {
+            const ahead = fn(x + (vp.xMax - vp.xMin) / rect.width);
+            if (Number.isFinite(ahead) && Math.sign(y - prev.y) !== Math.sign(ahead - y) && Math.abs(ahead - y) > 1e-4) {
+              annotations.push({ kind: 'turn', x, y });
+            }
+          }
+          prev = { x, y, p };
+        }
+        ctx.stroke();
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+        annotations.slice(0, 5).forEach(item => {
+          const p = mathToPx(item.x, item.y, vp, rect);
+          if (p.x < 0 || p.x > rect.width || p.y < 0 || p.y > rect.height) return;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillText(`${item.kind === 'zero' ? 'x' : 'v'} ${formatNumber(item.x)}, ${formatNumber(item.y)}`, p.x + 7, p.y - 7);
+        });
+      }
+      function draw() {
+        raf = 0;
+        const rect = wrap.getBoundingClientRect();
+        const vp = Store.get('viewport');
+        drawGrid(rect, vp);
+        Store.get('equations').forEach(eq => {
+          if (!eq.expr.trim()) return;
+          try {
+            plotEquation(compile(eq.expr), eq.color, rect, vp);
+          } catch {
+            // Invalid graph equations are shown in the list, but skipped in canvas drawing.
+          }
+        });
+        $('#viewport-readout').textContent = `x ${formatNumber(vp.xMin)}..${formatNumber(vp.xMax)}  y ${formatNumber(vp.yMin)}..${formatNumber(vp.yMax)}`;
+      }
+      function schedule() {
+        if (!raf) raf = requestAnimationFrame(draw);
+      }
+      function zoomAt(clientX, clientY, factor) {
+        const rect = wrap.getBoundingClientRect();
+        const vp = Store.get('viewport');
+        const anchor = pxToMath(clientX - rect.left, clientY - rect.top, vp, rect);
+        const next = {
+          xMin: anchor.x + (vp.xMin - anchor.x) * factor,
+          xMax: anchor.x + (vp.xMax - anchor.x) * factor,
+          yMin: anchor.y + (vp.yMin - anchor.y) * factor,
+          yMax: anchor.y + (vp.yMax - anchor.y) * factor
+        };
+        Store.set('viewport', next);
+      }
+      function panBy(dx, dy) {
+        const rect = wrap.getBoundingClientRect();
+        const vp = Store.get('viewport');
+        const spanX = vp.xMax - vp.xMin;
+        const spanY = vp.yMax - vp.yMin;
+        Store.set('viewport', {
+          xMin: vp.xMin - dx / rect.width * spanX,
+          xMax: vp.xMax - dx / rect.width * spanX,
+          yMin: vp.yMin + dy / rect.height * spanY,
+          yMax: vp.yMax + dy / rect.height * spanY
+        });
+      }
+      function renderEquations() {
+        const host = $('#equations');
+        host.replaceChildren();
+        Store.get('equations').forEach((eq, index) => {
+          const row = document.createElement('div');
+          row.className = 'equation-row';
+          row.innerHTML = `<span class="swatch" style="background:${eq.color}"></span><input aria-label="Equation ${index + 1}" value=""><button class="icon-btn" type="button" title="Remove equation" aria-label="Remove equation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>`;
+          const input = $('input', row);
+          input.dataset.equationId = eq.id;
+          input.value = eq.expr;
+          input.addEventListener('input', event => {
+            const equations = Store.get('equations').map(item => item.id === eq.id ? { ...item, expr: event.target.value } : item);
+            Store.set('equations', equations);
+          });
+          $('button', row).addEventListener('click', () => {
+            Store.set('equations', Store.get('equations').filter(item => item.id !== eq.id));
+          });
+          host.append(row);
+        });
+      }
+      function updateEquationInputs() {
+        $$('#equations input[data-equation-id]').forEach(input => {
+          if (document.activeElement === input) return;
+          const eq = Store.get('equations').find(item => item.id === input.dataset.equationId);
+          if (eq && input.value !== eq.expr) input.value = eq.expr;
+        });
+      }
+      function syncCalculatorExpression(expression) {
+        const { calcGraphId } = Store.snapshot();
+        const expressionText = graphExpressionOf(expression);
+        const equations = Store.get('equations');
+        const withoutCalc = equations.filter(eq => eq.id !== calcGraphId);
+        if (!expressionText || !isGraphExpression(expression)) {
+          if (withoutCalc.length !== equations.length) Store.set('equations', withoutCalc);
+          return;
+        }
+        if (withoutCalc.some(eq => graphExpressionOf(eq.expr) === expressionText)) {
+          if (withoutCalc.length !== equations.length) Store.set('equations', withoutCalc);
+          return;
+        }
+        const calcEquation = { id: calcGraphId, expr: expressionText, color: '#2a8fb8', source: 'calc' };
+        const next = [calcEquation, ...withoutCalc];
+        const changed = JSON.stringify(equations) !== JSON.stringify(next);
+        if (changed) Store.set('equations', next);
+      }
+      function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        Store.subscribe('equations', equations => {
+          const signature = equations.map(eq => `${eq.id}:${eq.color}`).join('|');
+          if (signature !== renderedEquationSignature) {
+            renderedEquationSignature = signature;
+            renderEquations();
+          }
+          updateEquationInputs();
+          schedule();
+        });
+        Store.subscribe('expression', syncCalculatorExpression);
+        Store.subscribe('viewport', schedule);
+        $('#add-equation').addEventListener('click', () => {
+          const equations = Store.get('equations');
+          Store.set('equations', [...equations, { id: crypto.randomUUID(), expr: 'cos(x)', color: palette[equations.length % palette.length] }]);
+        });
+        $('#fit-graph').addEventListener('click', () => Store.set('viewport', { xMin: -10, xMax: 10, yMin: -7, yMax: 7 }));
+        wrap.addEventListener('wheel', event => {
+          event.preventDefault();
+          zoomAt(event.clientX, event.clientY, event.deltaY > 0 ? 1.14 : 0.88);
+        }, { passive: false });
+        wrap.addEventListener('pointerdown', event => {
+          wrap.setPointerCapture(event.pointerId);
+          pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (pointers.size === 1) gesture = { mode: 'pan', x: event.clientX, y: event.clientY };
+          if (pointers.size === 2) {
+            const pts = [...pointers.values()];
+            gesture = { mode: 'pinch', dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), viewport: clone(Store.get('viewport')) };
+          }
+        });
+        wrap.addEventListener('pointermove', event => {
+          if (!pointers.has(event.pointerId) || !gesture) return;
+          const old = pointers.get(event.pointerId);
+          pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gesture.mode === 'pan' && pointers.size === 1) {
+            panBy(event.clientX - old.x, event.clientY - old.y);
+          } else if (gesture.mode === 'pinch' && pointers.size === 2) {
+            const pts = [...pointers.values()];
+            const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+            const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+            Store.set('viewport', gesture.viewport);
+            zoomAt(mid.x, mid.y, gesture.dist / Math.max(dist, 1));
+          }
+        });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => wrap.addEventListener(type, event => {
+          pointers.delete(event.pointerId);
+          gesture = null;
+        }));
+      }
+      return { init, schedule, resize };
+    })();
+
+    const Router = (() => {
+      function init() {
+        $('.tab-bar').addEventListener('click', event => {
+          const btn = event.target.closest('button[data-tab]');
+          if (!btn) return;
+          Store.set('tab', btn.dataset.tab);
+        });
+        Store.subscribe('tab', tab => {
+          $$('.tab').forEach(button => button.setAttribute('aria-selected', String(button.dataset.tab === tab)));
+          $$('.view').forEach(view => view.classList.toggle('is-active', view.id === `${tab}-view`));
+          if (tab === 'graph') Graph.resize();
+        });
+      }
+      return { init };
+    })();
+
+    const PWA = (() => {
+      let deferredPrompt = null;
+      function init() {
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+          window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+        }
+        window.addEventListener('beforeinstallprompt', event => {
+          event.preventDefault();
+          deferredPrompt = event;
+          $('#install-area').classList.add('is-visible');
+        });
+        $('#install-button').addEventListener('click', async () => {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          $('#install-area').classList.remove('is-visible');
+        });
+      }
+      return { init };
+    })();
+
+    const Tests = (() => {
+      const cases = [
+        { expr: '2+2', expected: 4 },
+        { expr: '2*3+4', expected: 10 },
+        { expr: '2(3+4)', expected: 14 },
+        { expr: '(3/4 + sqrt(16))^2', expected: 22.5625 },
+        { expr: 'sin(pi/2)', expected: 1 },
+        { expr: 'cos(0)', expected: 1 },
+        { expr: 'tan(0)', expected: 0 },
+        { expr: 'sec(0)', expected: 1 },
+        { expr: 'csc(pi/2)', expected: 1 },
+        { expr: 'cot(pi/4)', expected: 1 },
+        { expr: 'asin(1)', expected: Math.PI / 2 },
+        { expr: 'acos(1)', expected: 0 },
+        { expr: 'atan(1)', expected: Math.PI / 4 },
+        { expr: 'sinh(0)', expected: 0 },
+        { expr: 'cosh(0)', expected: 1 },
+        { expr: 'tanh(0)', expected: 0 },
+        { expr: 'log(1000)', expected: 3 },
+        { expr: 'ln(e)', expected: 1 },
+        { expr: 'exp(1)', expected: Math.E },
+        { expr: 'root(2,16)', expected: 4 },
+        { expr: '5!', expected: 120 },
+        { expr: 'ncr(5,2)', expected: 10 },
+        { expr: 'npr(5,2)', expected: 20 },
+        { expr: '2^3^2', expected: 512 },
+        { expr: 'deriv(x^2,3)', expected: 6 },
+        { expr: 'integral(x)', expectedParts: ['x', '^', '2', '/', '2', 'C'] },
+        { expr: 'integral(x,0,2)', expected: 2 },
+        { expr: 'limit(sin(x)/x,0)', expected: 1 },
+        { expr: 'limit(x^2,3)', expected: 9 },
+        { expr: 'limit((x^2-1)/(x-1),1)', expected: 2 },
+        { expr: 'x+2=5', expectedParts: ['x = 3'] },
+        { expr: 'x^2=9', expectedParts: ['x = -3', 'x = 3'] },
+        { expr: 'x^2+1=0', expectedParts: ['x = -i', 'x = i'] },
+        { expr: 'x^3-1=0', expectedParts: ['x = 1', '-0.5 +', '-0.5 -', '0.86602540378'] },
+        { expr: '2>1 and not false', expected: true },
+        { expr: '2=2', expected: true },
+        { expr: '1/2 + 1/2', expected: 1 },
+        { expr: 'abs(-7)', expected: 7 },
+        { expr: 'floor(2.9)', expected: 2 },
+        { expr: 'ceil(2.1)', expected: 3 },
+        { expr: 'round(2.6)', expected: 3 },
+        { expr: 'min(4,2)', expected: 2 },
+        { expr: 'max(4,2)', expected: 4 },
+        { expr: '2^2', expected: 4 },
+        { expr: 'sqrt(16) + 3^2', expected: 13 },
+        { expr: 'cos(2)^2', expected: Math.cos(2) ** 2 },
+        { expr: 'sinx', expected: Math.sin(2), scope: { x: 2 } },
+        { expr: 'cosx^2', expected: Math.cos(2) ** 2, scope: { x: 2 } },
+        { expr: '3x', expected: NaN },
+        { expr: 'x+x', expected: NaN }
+      ];
+      function run() {
+        const lines = [];
+        let pass = 0;
+        cases.forEach(test => {
+          const { expr, expected, expectedParts, scope } = test;
+          try {
+            const ast = Parser.parse(expr);
+            let { result } = Simplifier.simplify(ast);
+            const solved = EquationSolver.solve(result);
+            if (solved) result = solved.result;
+            const symbolic = JSON.stringify(result).includes('"type":"var"') && !scope;
+            let value;
+            try {
+              value = Evaluator.evalAst(result, scope);
+            } catch (error) {
+              if (!symbolic) throw error;
+              value = NaN;
+            }
+            const rendered = Number.isNaN(value) ? astText(result) : formatNumber(value);
+            const ok = expectedParts
+              ? expectedParts.every(part => rendered.includes(part))
+              : Number.isNaN(expected)
+              ? Number.isNaN(value)
+              : typeof expected === 'boolean'
+              ? value === expected
+              : Math.abs(value - expected) < 1e-9;
+            if (ok) pass += 1;
+            lines.push(`${ok ? 'PASS' : 'FAIL'} ${expr} => ${rendered}${expectedParts ? ` expected parts ${expectedParts.join(' | ' )}` : ` expected ${expected}`}`);
+          } catch (error) {
+            lines.push(`FAIL ${expr} threw ${error.message}`);
+          }
+        });
+        const panel = $('#test-panel');
+        panel.classList.add('is-visible');
+        panel.textContent = `${pass}/${cases.length} math pipeline tests passed\n${lines.join('\n')}`;
+        console.log(panel.textContent);
+      }
+      return { run };
+    })();
+
+    Keypad.init();
+    CalcView.init();
+    Graph.init();
+    Router.init();
+    PWA.init();
+    Pipeline.runNow('');
+    if (new URLSearchParams(location.search).get('test') === '1') Tests.run();
+  </script>
+</body>
+</html>
