@@ -208,6 +208,8 @@
     .graph-pane,
     .equation-list,
     .graph-controls,
+    .logic-main,
+    .logic-table-panel,
     .test-panel {
       background: var(--glass-bg);
       border: 1px solid var(--glass-border);
@@ -700,6 +702,120 @@
       gap: 14px;
     }
 
+    #logic-view {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .logic-main {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .logic-expression {
+      width: 100%;
+      min-height: 96px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      resize: vertical;
+      outline: none;
+      background: rgba(255, 255, 255, 0.76);
+      font-family: var(--mono);
+      color: var(--ink);
+    }
+
+    .logic-expression:focus {
+      border-color: rgba(79, 126, 232, 0.5);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
+    }
+
+    .logic-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .logic-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .logic-token {
+      min-height: 38px;
+      min-width: 56px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.86);
+      font-weight: 740;
+      color: var(--ink);
+      padding: 0 10px;
+    }
+
+    .logic-summary {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.9rem;
+    }
+
+    .logic-table-panel {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: min(68svh, 620px);
+    }
+
+    .logic-table-wrap {
+      overflow: auto;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.56);
+    }
+
+    .logic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+    }
+
+    .logic-table th,
+    .logic-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .logic-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .logic-table td:last-child,
+    .logic-table th:last-child {
+      text-align: left;
+      padding-left: 12px;
+      font-family: var(--font);
+      font-weight: 700;
+    }
+
+    .logic-empty {
+      color: var(--muted);
+      padding: 16px;
+      font-family: var(--mono);
+    }
+
     .equation-list {
       padding: 14px;
       display: grid;
@@ -814,6 +930,8 @@
       .graph-pane,
       .equation-list,
       .graph-controls,
+      .logic-main,
+      .logic-table-panel,
       .test-panel {
         background: var(--glass-solid);
       }
@@ -834,6 +952,10 @@
       #graph-view {
         grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
       }
+
+      #logic-view {
+        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      }
     }
 
     @media (max-width: 620px) {
@@ -847,7 +969,7 @@
       }
 
       .tab-bar {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
       .key-grid {
@@ -900,6 +1022,7 @@
       <nav class="tab-bar" aria-label="Views">
         <button class="tab" type="button" data-tab="calc" aria-selected="true">Calc</button>
         <button class="tab" type="button" data-tab="graph" aria-selected="false">Graph</button>
+        <button class="tab" type="button" data-tab="logic" aria-selected="false">Logic</button>
       </nav>
       <div class="install-area" id="install-area">
         <button class="icon-btn" type="button" id="install-button" title="Install app" aria-label="Install app">
@@ -982,6 +1105,57 @@
               Reset
             </button>
           </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="view" id="logic-view" aria-label="Logic">
+      <section class="logic-main">
+        <div class="panel-title">
+          <h2>Logic Expression</h2>
+          <div class="logic-actions">
+            <button class="command-btn" type="button" id="logic-open-calc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h2"/><path d="M14 11h2"/><path d="M8 15h2"/><path d="M14 15h2"/></svg>
+              Calc
+            </button>
+            <button class="command-btn" type="button" id="logic-run">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+              Run
+            </button>
+          </div>
+        </div>
+        <textarea class="logic-expression" id="logic-expression" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Logic expression" placeholder="Example: (p ∧ q) ∨ ¬r"></textarea>
+        <div class="logic-toolbar" id="logic-toolbar">
+          <button class="logic-token" type="button" data-token="∧">∧</button>
+          <button class="logic-token" type="button" data-token="∨">∨</button>
+          <button class="logic-token" type="button" data-token="¬">¬</button>
+          <button class="logic-token" type="button" data-token="(">(</button>
+          <button class="logic-token" type="button" data-token=")">)</button>
+          <button class="logic-token" type="button" data-token="true">true</button>
+          <button class="logic-token" type="button" data-token="false">false</button>
+          <button class="logic-token" type="button" data-token="==">=</button>
+          <button class="logic-token" type="button" data-token="^()">^</button>
+          <button class="logic-token" type="button" data-token="sin()">sin</button>
+          <button class="logic-token" type="button" data-token="cos()">cos</button>
+          <button class="logic-token" type="button" data-token="tan()">tan</button>
+          <button class="logic-token" type="button" data-token="deriv(,x)">d/dx</button>
+          <button class="logic-token" type="button" data-token="integral(,0,1)">∫</button>
+          <button class="logic-token" type="button" data-token="limit(,0)">lim</button>
+        </div>
+        <div class="logic-summary" id="logic-summary">
+          <div>Status: Ready</div>
+          <div>Variables: 0</div>
+          <div>Rows: 0</div>
+        </div>
+      </section>
+
+      <section class="logic-table-panel">
+        <div class="panel-title">
+          <h2>Truth Table</h2>
+          <span id="logic-row-count">0</span>
+        </div>
+        <div class="logic-table-wrap" id="logic-table-wrap">
+          <div class="logic-empty">Enter an expression to generate a truth table.</div>
         </div>
       </section>
     </section>
@@ -2871,6 +3045,124 @@
       return { init, schedule, resize };
     })();
 
+    const LogicView = (() => {
+      function collectVars(node, out = new Set()) {
+        if (!node) return out;
+        if (node.type === 'var') out.add(node.name);
+        else if (node.type === 'unary') collectVars(node.value, out);
+        else if (node.type === 'factorial') collectVars(node.value, out);
+        else if (node.type === 'frac') {
+          collectVars(node.num, out);
+          collectVars(node.den, out);
+        } else if (node.type === 'bin') {
+          collectVars(node.left, out);
+          collectVars(node.right, out);
+        } else if (node.type === 'func') node.args.forEach(arg => collectVars(arg, out));
+        return out;
+      }
+      function insertToken(token) {
+        const input = $('#logic-expression');
+        const start = input.selectionStart || 0;
+        const end = input.selectionEnd || 0;
+        const before = input.value.slice(0, start);
+        const after = input.value.slice(end);
+        const padLeft = before && /[a-zA-Z0-9)]$/.test(before) && /[a-zA-Z(¬]/.test(token) ? ' ' : '';
+        const padRight = after && /[a-zA-Z0-9(]/.test(after) && /[a-zA-Z0-9)]/.test(token) ? ' ' : '';
+        const text = `${padLeft}${token}${padRight}`;
+        input.value = before + text + after;
+        const slotIndex = text.indexOf('()') >= 0 ? text.indexOf('()') + 1 : text.indexOf('(,') >= 0 ? text.indexOf('(,') + 1 : -1;
+        const caret = start + (slotIndex >= 0 ? slotIndex : text.length);
+        input.focus();
+        input.setSelectionRange(caret, caret);
+      }
+      function boolText(value) {
+        return value ? 'T' : 'F';
+      }
+      function renderTable(vars, rows) {
+        const wrap = $('#logic-table-wrap');
+        if (!rows.length) {
+          wrap.innerHTML = '<div class="logic-empty">No rows to show.</div>';
+          return;
+        }
+        const table = document.createElement('table');
+        table.className = 'logic-table';
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        vars.forEach(name => {
+          const th = document.createElement('th');
+          th.textContent = name;
+          headerRow.append(th);
+        });
+        const resultTh = document.createElement('th');
+        resultTh.textContent = 'Result';
+        headerRow.append(resultTh);
+        thead.append(headerRow);
+        const tbody = document.createElement('tbody');
+        rows.forEach(row => {
+          const tr = document.createElement('tr');
+          vars.forEach(name => {
+            const td = document.createElement('td');
+            td.textContent = boolText(Boolean(row.scope[name]));
+            tr.append(td);
+          });
+          const resultTd = document.createElement('td');
+          resultTd.textContent = row.result;
+          tr.append(resultTd);
+          tbody.append(tr);
+        });
+        table.append(thead, tbody);
+        wrap.replaceChildren(table);
+      }
+      function setSummary(status, vars, rows) {
+        $('#logic-summary').innerHTML = `<div>Status: ${status}</div><div>Variables: ${vars}</div><div>Rows: ${rows}</div>`;
+        $('#logic-row-count').textContent = String(rows);
+      }
+      function evaluateExpression() {
+        const expression = $('#logic-expression').value.trim();
+        if (!expression) {
+          setSummary('Ready', 0, 0);
+          $('#logic-table-wrap').innerHTML = '<div class="logic-empty">Enter an expression to generate a truth table.</div>';
+          return;
+        }
+        try {
+          const normalized = normalizeMathInput(expression);
+          const ast = Parser.parse(normalized);
+          const vars = [...collectVars(ast)].sort();
+          if (vars.length > 8) throw new Error('Use at most 8 variables for a truth table');
+          const rows = [];
+          const rowCount = Math.max(1, 2 ** vars.length);
+          for (let mask = 0; mask < rowCount; mask += 1) {
+            const scope = {};
+            vars.forEach((name, idx) => {
+              const bit = (mask >> (vars.length - idx - 1)) & 1;
+              scope[name] = Boolean(bit);
+            });
+            const value = Evaluator.evalAst(ast, scope);
+            const asBool = Boolean(value);
+            rows.push({ scope, result: typeof value === 'boolean' ? boolText(value) : `${boolText(asBool)} (${formatNumber(Number(value))})` });
+          }
+          renderTable(vars, rows);
+          setSummary('OK', vars.length, rows.length);
+        } catch (error) {
+          setSummary(`Error - ${error.message}`, 0, 0);
+          $('#logic-table-wrap').innerHTML = `<div class="logic-empty error">${error.message}</div>`;
+        }
+      }
+      function init() {
+        $('#logic-run').addEventListener('click', evaluateExpression);
+        $('#logic-open-calc').addEventListener('click', () => Store.set('tab', 'calc'));
+        $('#logic-expression').addEventListener('input', () => evaluateExpression());
+        $('#logic-toolbar').addEventListener('click', event => {
+          const btn = event.target.closest('button[data-token]');
+          if (!btn) return;
+          insertToken(btn.dataset.token);
+          evaluateExpression();
+        });
+        evaluateExpression();
+      }
+      return { init };
+    })();
+
     const Router = (() => {
       function init() {
         $('.tab-bar').addEventListener('click', event => {
@@ -3005,6 +3297,7 @@
     Keypad.init();
     CalcView.init();
     Graph.init();
+    LogicView.init();
     Router.init();
     PWA.init();
     Pipeline.runNow('');
