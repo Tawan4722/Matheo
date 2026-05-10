@@ -75,7 +75,7 @@ x^2+1=0
 y=x^3-2x
 ```
 
-Supported function names:
+Supported function names (complete parser list):
 
 ```text
 sin cos tan sec csc cot
@@ -83,8 +83,23 @@ asin acos atan
 sinh cosh tanh
 sqrt root log ln exp abs
 floor ceil round min max
+sum
 ncr npr
 deriv integral limit
+```
+
+Supported operators and comparison/logical tokens:
+
+```text
++ - * / ^ !
+= == != > < >= <=
+and or not
+```
+
+Supported constants and literals:
+
+```text
+pi e Infinity true false
 ```
 
 ## Calculator + Solve
