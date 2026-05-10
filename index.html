@@ -208,6 +208,8 @@
     .graph-pane,
     .equation-list,
     .graph-controls,
+    .function-main,
+    .function-table-panel,
     .logic-main,
     .logic-table-panel,
     .test-panel {
@@ -707,11 +709,57 @@
       gap: 14px;
     }
 
+    #functions-view {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .function-main,
     .logic-main {
       padding: 14px;
       display: grid;
       gap: 12px;
       align-content: start;
+    }
+
+    .function-field {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-weight: 760;
+    }
+
+    .function-field input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+      outline: none;
+      font-family: var(--mono);
+    }
+
+    .function-field input:focus {
+      border-color: rgba(79, 126, 232, 0.5);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
+    }
+
+    .function-result {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.58);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-weight: 760;
+      overflow-wrap: anywhere;
     }
 
     .logic-expression {
@@ -772,12 +820,21 @@
       min-height: min(68svh, 620px);
     }
 
+    .function-table-panel {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: min(68svh, 620px);
+    }
+
+    .function-table-wrap,
     .logic-table-wrap {
       overflow: auto;
       border-top: 1px solid var(--line);
       background: rgba(255, 255, 255, 0.56);
     }
 
+    .function-table,
     .logic-table {
       width: 100%;
       border-collapse: collapse;
@@ -785,6 +842,8 @@
       font-size: 0.88rem;
     }
 
+    .function-table th,
+    .function-table td,
     .logic-table th,
     .logic-table td {
       border-bottom: 1px solid var(--line);
@@ -793,6 +852,7 @@
       white-space: nowrap;
     }
 
+    .function-table th,
     .logic-table th {
       position: sticky;
       top: 0;
@@ -930,6 +990,8 @@
       .graph-pane,
       .equation-list,
       .graph-controls,
+      .function-main,
+      .function-table-panel,
       .logic-main,
       .logic-table-panel,
       .test-panel {
@@ -953,6 +1015,10 @@
         grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
       }
 
+      #functions-view {
+        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      }
+
       #logic-view {
         grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
       }
@@ -969,7 +1035,7 @@
       }
 
       .tab-bar {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
       .key-grid {
@@ -1022,6 +1088,7 @@
       <nav class="tab-bar" aria-label="Views">
         <button class="tab" type="button" data-tab="calc" aria-selected="true">Calc</button>
         <button class="tab" type="button" data-tab="graph" aria-selected="false">Graph</button>
+        <button class="tab" type="button" data-tab="functions" aria-selected="false">Func</button>
         <button class="tab" type="button" data-tab="logic" aria-selected="false">Logic</button>
       </nav>
       <div class="install-area" id="install-area">
@@ -1106,6 +1173,41 @@
             </button>
           </div>
         </div>
+      </section>
+    </section>
+
+    <section class="view" id="functions-view" aria-label="Functions">
+      <section class="function-main">
+        <div class="panel-title">
+          <h2>Function</h2>
+          <div class="logic-actions">
+            <button class="command-btn" type="button" id="function-graph">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m6 15 4-5 3 3 5-7"/></svg>
+              Graph
+            </button>
+            <button class="command-btn" type="button" id="function-run">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+              Run
+            </button>
+          </div>
+        </div>
+        <label class="function-field">
+          <span>f(x) =</span>
+          <input id="function-expression" value="x^2 - 4" spellcheck="false" autocomplete="off" autocapitalize="off">
+        </label>
+        <label class="function-field">
+          <span>x =</span>
+          <input id="function-x" value="2" spellcheck="false" autocomplete="off" autocapitalize="off">
+        </label>
+        <div class="function-result" id="function-result">f(2) = 0</div>
+      </section>
+
+      <section class="function-table-panel">
+        <div class="panel-title">
+          <h2>Value Table</h2>
+          <span id="function-row-count">0</span>
+        </div>
+        <div class="function-table-wrap" id="function-table-wrap"></div>
       </section>
     </section>
 
@@ -3045,6 +3147,87 @@
       return { init, schedule, resize };
     })();
 
+    const FunctionView = (() => {
+      const cleanExpression = expression => normalizeMathInput(expression.trim())
+        .replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '')
+        .replace(/^y\s*=\s*/i, '');
+      function compile() {
+        const expr = cleanExpression($('#function-expression').value);
+        if (!expr) throw new Error('Enter a function expression');
+        const ast = Parser.parse(expr);
+        return { expr, ast, fn: x => Evaluator.evalAst(ast, { x }) };
+      }
+      function renderTable(rows) {
+        const table = document.createElement('table');
+        table.className = 'function-table';
+        const thead = document.createElement('thead');
+        const head = document.createElement('tr');
+        ['x', 'f(x)'].forEach(label => {
+          const th = document.createElement('th');
+          th.textContent = label;
+          head.append(th);
+        });
+        thead.append(head);
+        const tbody = document.createElement('tbody');
+        rows.forEach(row => {
+          const tr = document.createElement('tr');
+          const xCell = document.createElement('td');
+          xCell.textContent = formatNumber(row.x);
+          const yCell = document.createElement('td');
+          yCell.textContent = row.error || formatNumber(row.y);
+          if (row.error) yCell.className = 'error';
+          tr.append(xCell, yCell);
+          tbody.append(tr);
+        });
+        table.append(thead, tbody);
+        $('#function-table-wrap').replaceChildren(table);
+        $('#function-row-count').textContent = String(rows.length);
+      }
+      function evaluate() {
+        try {
+          const { fn } = compile();
+          const xValue = Evaluator.evalAst(Parser.parse(normalizeMathInput($('#function-x').value || '0')));
+          const yValue = fn(xValue);
+          $('#function-result').textContent = `f(${formatNumber(xValue)}) = ${formatNumber(yValue)}`;
+          const rows = [];
+          for (let x = -5; x <= 5; x += 1) {
+            try {
+              rows.push({ x, y: fn(x) });
+            } catch (error) {
+              rows.push({ x, error: error.message });
+            }
+          }
+          renderTable(rows);
+        } catch (error) {
+          $('#function-result').textContent = error.message;
+          $('#function-result').classList.add('error');
+          $('#function-table-wrap').innerHTML = `<div class="logic-empty error">${error.message}</div>`;
+          $('#function-row-count').textContent = '0';
+          return;
+        }
+        $('#function-result').classList.remove('error');
+      }
+      function graphFunction() {
+        try {
+          const { expr } = compile();
+          const equations = Store.get('equations');
+          Store.set('equations', [...equations, { id: crypto.randomUUID(), expr, color: '#5e9446', source: 'function' }]);
+          Store.set('tab', 'graph');
+        } catch (error) {
+          $('#function-result').textContent = error.message;
+          $('#function-result').classList.add('error');
+        }
+      }
+      function init() {
+        $('#function-run').addEventListener('click', evaluate);
+        $('#function-graph').addEventListener('click', graphFunction);
+        $('#function-expression').addEventListener('input', evaluate);
+        $('#function-x').addEventListener('input', evaluate);
+        evaluate();
+      }
+      return { init };
+    })();
+
     const LogicView = (() => {
       function collectVars(node, out = new Set()) {
         if (!node) return out;
@@ -3297,6 +3480,7 @@
     Keypad.init();
     CalcView.init();
     Graph.init();
+    FunctionView.init();
     LogicView.init();
     Router.init();
     PWA.init();

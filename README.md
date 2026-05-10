@@ -11,6 +11,7 @@ It ships as a small PWA with no build step and no runtime dependencies.
 - Equation solving in `x` for real and complex polynomial roots.
 - Calculus helpers: derivative, integral, and limit.
 - Graph view with pan/zoom and equation list editing.
+- Dedicated function page for evaluating `f(x)`, making value tables, and graphing functions.
 - Dedicated logic page with truth-table generation.
 - Calculator-to-graph linking for expressions in `x` and `y=...`.
 - PWA install + offline cache shell.
@@ -91,6 +92,13 @@ deriv integral limit
 - `=` inserts equality for expressions/equations.
 - `Solve` evaluates numeric expressions or solves equations.
 - For equations in `x`, Matheo solves polynomial roots and can return complex roots (for example `x^2+1=0`).
+
+## Function Page
+
+- The `Func` tab evaluates functions in `x`.
+- Enter forms such as `x^2 - 4`, `sin(x)`, `f(x)=x^3-2x`, or `y=cos(x)`.
+- It evaluates `f(x)` at the selected input value and generates a table from `x=-5` through `x=5`.
+- Use `Graph` to send the current function to the graph page.
 
 ## Logic Page
 
