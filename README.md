@@ -13,6 +13,7 @@ It ships as a small PWA with no build step and no runtime dependencies.
 - Graph view with pan/zoom and equation list editing.
 - Dedicated function page for evaluating `f(x)`, making value tables, and graphing functions.
 - Dedicated logic page with truth-table generation.
+- Dedicated matrix page for linear algebra operations.
 - Calculator-to-graph linking for expressions in `x` and `y=...`.
 - PWA install + offline cache shell.
 
@@ -122,6 +123,21 @@ pi e Infinity true false
 - Use it for expressions like `(p and q) or not r`, `(p ∧ q) ∨ ¬r`, and boolean comparisons.
 - The page includes logic tokens plus shortcuts for common math predicates (`^`, `sin`, `cos`, `tan`, derivative, integral, limit).
 - Use the `Calc` button on the Logic page to return to the full calculator for normal power, trigonometry, calculus, and equation solving.
+
+## Matrix Page
+
+- The `Matrix` tab supports matrix operations with JSON-like literals.
+- Input format examples:
+  - `A = [[1,2],[3,4]]`
+  - `B = [[2,0],[1,2]]`
+  - `b = [5,11]`
+- Supported operations:
+  - `det(A)`
+  - `inv(A)`
+  - `transpose(A)`
+  - `rank(A)`
+  - `solve(A,b)`
+  - `A+B`, `A-B`, `A×B`
 
 ## Graph View
 

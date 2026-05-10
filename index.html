@@ -714,8 +714,14 @@
       gap: 14px;
     }
 
+    #matrix-view {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
     .function-main,
-    .logic-main {
+    .logic-main,
+    .matrix-main {
       padding: 14px;
       display: grid;
       gap: 12px;
@@ -840,6 +846,58 @@
       font-size: 0.9rem;
     }
 
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .matrix-block {
+      display: grid;
+      gap: 6px;
+    }
+
+    .matrix-block textarea {
+      width: 100%;
+      min-height: 110px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px 11px;
+      resize: vertical;
+      outline: none;
+      background: rgba(255, 255, 255, 0.76);
+      font-family: var(--mono);
+      color: var(--ink);
+    }
+
+    .matrix-block textarea:focus {
+      border-color: rgba(79, 126, 232, 0.5);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
+    }
+
+    .matrix-hint {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .matrix-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .matrix-result {
+      min-height: 54px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.58);
+      color: var(--ink);
+      font-family: var(--mono);
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
     .logic-table-panel {
       overflow: hidden;
       display: grid;
@@ -854,7 +912,15 @@
       min-height: min(68svh, 620px);
     }
 
+    .matrix-table-panel {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: min(68svh, 620px);
+    }
+
     .function-table-wrap,
+    .matrix-table-wrap,
     .logic-table-wrap {
       overflow: auto;
       border-top: 1px solid var(--line);
@@ -862,6 +928,7 @@
     }
 
     .function-table,
+    .matrix-table,
     .logic-table {
       width: 100%;
       border-collapse: collapse;
@@ -871,6 +938,8 @@
 
     .function-table th,
     .function-table td,
+    .matrix-table th,
+    .matrix-table td,
     .logic-table th,
     .logic-table td {
       border-bottom: 1px solid var(--line);
@@ -880,6 +949,7 @@
     }
 
     .function-table th,
+    .matrix-table th,
     .logic-table th {
       position: sticky;
       top: 0;
@@ -1049,6 +1119,10 @@
       #logic-view {
         grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
       }
+
+      #matrix-view {
+        grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+      }
     }
 
     @media (max-width: 620px) {
@@ -1062,7 +1136,7 @@
       }
 
       .tab-bar {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
       }
 
       .key-grid {
@@ -1116,6 +1190,7 @@
         <button class="tab" type="button" data-tab="calc" aria-selected="true">Calc</button>
         <button class="tab" type="button" data-tab="graph" aria-selected="false">Graph</button>
         <button class="tab" type="button" data-tab="functions" aria-selected="false">Func</button>
+        <button class="tab" type="button" data-tab="matrix" aria-selected="false">Matrix</button>
         <button class="tab" type="button" data-tab="logic" aria-selected="false">Logic</button>
       </nav>
       <div class="install-area" id="install-area">
@@ -1300,6 +1375,55 @@
         </div>
         <div class="logic-table-wrap" id="logic-table-wrap">
           <div class="logic-empty">Enter an expression to generate a truth table.</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="view" id="matrix-view" aria-label="Matrix">
+      <section class="matrix-main">
+        <div class="panel-title">
+          <h2>Matrix</h2>
+          <div class="logic-actions">
+            <button class="command-btn" type="button" id="matrix-run">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+              Run
+            </button>
+          </div>
+        </div>
+        <div class="matrix-grid">
+          <label class="matrix-block">
+            <span>A</span>
+            <textarea id="matrix-a" spellcheck="false" autocomplete="off" autocapitalize="off">[[1,2],[3,4]]</textarea>
+          </label>
+          <label class="matrix-block">
+            <span>B</span>
+            <textarea id="matrix-b" spellcheck="false" autocomplete="off" autocapitalize="off">[[2,0],[1,2]]</textarea>
+          </label>
+          <label class="matrix-block">
+            <span>b (vector)</span>
+            <textarea id="matrix-v" spellcheck="false" autocomplete="off" autocapitalize="off">[5,11]</textarea>
+          </label>
+        </div>
+        <div class="matrix-hint">Use JSON-like syntax, for example `[[1,2],[3,4]]` and `[5,11]`.</div>
+        <div class="matrix-toolbar" id="matrix-toolbar">
+          <button class="logic-token" type="button" data-op="detA">det(A)</button>
+          <button class="logic-token" type="button" data-op="invA">inv(A)</button>
+          <button class="logic-token" type="button" data-op="transposeA">transpose(A)</button>
+          <button class="logic-token" type="button" data-op="rankA">rank(A)</button>
+          <button class="logic-token" type="button" data-op="solveAb">solve(A,b)</button>
+          <button class="logic-token" type="button" data-op="addAB">A+B</button>
+          <button class="logic-token" type="button" data-op="subAB">A-B</button>
+          <button class="logic-token" type="button" data-op="mulAB">A×B</button>
+        </div>
+        <div class="matrix-result" id="matrix-result">Ready</div>
+      </section>
+      <section class="matrix-table-panel">
+        <div class="panel-title">
+          <h2>Output</h2>
+          <span id="matrix-shape">-</span>
+        </div>
+        <div class="matrix-table-wrap" id="matrix-table-wrap">
+          <div class="logic-empty">Run an operation to see output.</div>
         </div>
       </section>
     </section>
@@ -3189,6 +3313,124 @@
       return { init, schedule, resize };
     })();
 
+    const MatrixOps = (() => {
+      const EPS = 1e-10;
+      const clone = matrix => matrix.map(row => [...row]);
+      function assertMatrix(matrix, name = 'matrix') {
+        if (!Array.isArray(matrix) || !matrix.length || !matrix.every(Array.isArray) || !matrix[0].length) throw new Error(`${name} must be a non-empty 2D array`);
+        const cols = matrix[0].length;
+        matrix.forEach((row, idx) => {
+          if (row.length !== cols) throw new Error(`${name} row ${idx + 1} has a different length`);
+          row.forEach(value => {
+            if (!Number.isFinite(value)) throw new Error(`${name} contains non-numeric values`);
+          });
+        });
+      }
+      function assertVector(vector) {
+        if (!Array.isArray(vector) || !vector.length) throw new Error('vector b must be a non-empty array');
+        vector.forEach(value => {
+          if (!Number.isFinite(value)) throw new Error('vector b contains non-numeric values');
+        });
+      }
+      function shape(matrix) {
+        return { rows: matrix.length, cols: matrix[0].length };
+      }
+      function transpose(matrix) {
+        assertMatrix(matrix, 'A');
+        const { rows, cols } = shape(matrix);
+        return Array.from({ length: cols }, (_, c) => Array.from({ length: rows }, (_, r) => matrix[r][c]));
+      }
+      function multiply(a, b) {
+        assertMatrix(a, 'A');
+        assertMatrix(b, 'B');
+        if (a[0].length !== b.length) throw new Error('A columns must equal B rows for multiplication');
+        return a.map(row => b[0].map((_, c) => row.reduce((sum, value, i) => sum + value * b[i][c], 0)));
+      }
+      function add(a, b, sign = 1) {
+        assertMatrix(a, 'A');
+        assertMatrix(b, 'B');
+        if (a.length !== b.length || a[0].length !== b[0].length) throw new Error('A and B must have the same shape');
+        return a.map((row, r) => row.map((value, c) => value + sign * b[r][c]));
+      }
+      function rref(input) {
+        const m = clone(input);
+        const rows = m.length;
+        const cols = m[0].length;
+        let lead = 0;
+        for (let r = 0; r < rows && lead < cols; r += 1) {
+          let i = r;
+          while (i < rows && Math.abs(m[i][lead]) < EPS) i += 1;
+          if (i === rows) {
+            lead += 1;
+            r -= 1;
+            continue;
+          }
+          [m[r], m[i]] = [m[i], m[r]];
+          const pivot = m[r][lead];
+          for (let c = 0; c < cols; c += 1) m[r][c] /= pivot;
+          for (let rr = 0; rr < rows; rr += 1) {
+            if (rr === r) continue;
+            const factor = m[rr][lead];
+            if (Math.abs(factor) < EPS) continue;
+            for (let c = 0; c < cols; c += 1) m[rr][c] -= factor * m[r][c];
+          }
+          lead += 1;
+        }
+        return m.map(row => row.map(value => Math.abs(value) < EPS ? 0 : value));
+      }
+      function rank(matrix) {
+        assertMatrix(matrix, 'A');
+        const reduced = rref(matrix);
+        return reduced.filter(row => row.some(value => Math.abs(value) > EPS)).length;
+      }
+      function determinant(matrix) {
+        assertMatrix(matrix, 'A');
+        if (matrix.length !== matrix[0].length) throw new Error('det(A) requires a square matrix');
+        const m = clone(matrix);
+        const n = m.length;
+        let det = 1;
+        for (let c = 0; c < n; c += 1) {
+          let pivot = c;
+          for (let r = c; r < n; r += 1) if (Math.abs(m[r][c]) > Math.abs(m[pivot][c])) pivot = r;
+          if (Math.abs(m[pivot][c]) < EPS) return 0;
+          if (pivot !== c) {
+            [m[c], m[pivot]] = [m[pivot], m[c]];
+            det *= -1;
+          }
+          const pv = m[c][c];
+          det *= pv;
+          for (let r = c + 1; r < n; r += 1) {
+            const factor = m[r][c] / pv;
+            for (let k = c; k < n; k += 1) m[r][k] -= factor * m[c][k];
+          }
+        }
+        return Math.abs(det) < EPS ? 0 : det;
+      }
+      function inverse(matrix) {
+        assertMatrix(matrix, 'A');
+        if (matrix.length !== matrix[0].length) throw new Error('inv(A) requires a square matrix');
+        const n = matrix.length;
+        const aug = matrix.map((row, r) => [...row, ...Array.from({ length: n }, (_, c) => (r === c ? 1 : 0))]);
+        const reduced = rref(aug);
+        for (let r = 0; r < n; r += 1) {
+          for (let c = 0; c < n; c += 1) {
+            const expected = r === c ? 1 : 0;
+            if (Math.abs(reduced[r][c] - expected) > 1e-7) throw new Error('A is singular, inverse does not exist');
+          }
+        }
+        return reduced.map(row => row.slice(n));
+      }
+      function solve(matrix, vector) {
+        assertMatrix(matrix, 'A');
+        assertVector(vector);
+        if (matrix.length !== matrix[0].length) throw new Error('solve(A,b) requires square A');
+        if (vector.length !== matrix.length) throw new Error('b length must match A rows');
+        const inv = inverse(matrix);
+        return inv.map(row => row.reduce((sum, value, i) => sum + value * vector[i], 0));
+      }
+      return { assertMatrix, assertVector, transpose, multiply, add, rank, determinant, inverse, solve };
+    })();
+
     const FunctionView = (() => {
       const cleanExpression = expression => normalizeMathInput(expression.trim())
         .replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '')
@@ -3526,6 +3768,95 @@
       return { init };
     })();
 
+    const MatrixView = (() => {
+      const parseLiteral = (source, label) => {
+        try {
+          return JSON.parse(source.trim());
+        } catch {
+          throw new Error(`Invalid ${label} literal`);
+        }
+      };
+      const parseInputs = () => {
+        const a = parseLiteral($('#matrix-a').value, 'A');
+        const b = parseLiteral($('#matrix-b').value, 'B');
+        const v = parseLiteral($('#matrix-v').value, 'b');
+        MatrixOps.assertMatrix(a, 'A');
+        MatrixOps.assertMatrix(b, 'B');
+        MatrixOps.assertVector(v);
+        return { a, b, v };
+      };
+      const fmt = value => Number.isFinite(value) ? formatNumber(value) : String(value);
+      const renderMatrix = matrix => {
+        const table = document.createElement('table');
+        table.className = 'matrix-table';
+        const body = document.createElement('tbody');
+        matrix.forEach(row => {
+          const tr = document.createElement('tr');
+          row.forEach(value => {
+            const td = document.createElement('td');
+            td.textContent = fmt(value);
+            tr.append(td);
+          });
+          body.append(tr);
+        });
+        table.append(body);
+        return table;
+      };
+      const renderVector = vector => renderMatrix(vector.map(value => [value]));
+      function setError(message) {
+        $('#matrix-result').textContent = message;
+        $('#matrix-result').classList.add('error');
+        $('#matrix-shape').textContent = '-';
+        $('#matrix-table-wrap').innerHTML = `<div class="logic-empty error">${message}</div>`;
+      }
+      function setOutput(label, output) {
+        $('#matrix-result').classList.remove('error');
+        $('#matrix-result').textContent = label;
+        const wrap = $('#matrix-table-wrap');
+        if (typeof output === 'number') {
+          $('#matrix-shape').textContent = 'scalar';
+          wrap.innerHTML = `<div class="logic-empty">${fmt(output)}</div>`;
+          return;
+        }
+        if (Array.isArray(output) && output.length && !Array.isArray(output[0])) {
+          $('#matrix-shape').textContent = `${output.length}x1`;
+          wrap.replaceChildren(renderVector(output));
+          return;
+        }
+        $('#matrix-shape').textContent = `${output.length}x${output[0].length}`;
+        wrap.replaceChildren(renderMatrix(output));
+      }
+      function runOperation(op) {
+        try {
+          const { a, b, v } = parseInputs();
+          if (op === 'detA') return setOutput(`det(A) = ${fmt(MatrixOps.determinant(a))}`, MatrixOps.determinant(a));
+          if (op === 'invA') return setOutput('inv(A)', MatrixOps.inverse(a));
+          if (op === 'transposeA') return setOutput('transpose(A)', MatrixOps.transpose(a));
+          if (op === 'rankA') return setOutput(`rank(A) = ${fmt(MatrixOps.rank(a))}`, MatrixOps.rank(a));
+          if (op === 'solveAb') return setOutput('solve(A,b)', MatrixOps.solve(a, v));
+          if (op === 'addAB') return setOutput('A + B', MatrixOps.add(a, b, 1));
+          if (op === 'subAB') return setOutput('A - B', MatrixOps.add(a, b, -1));
+          if (op === 'mulAB') return setOutput('A × B', MatrixOps.multiply(a, b));
+          throw new Error('Unknown operation');
+        } catch (error) {
+          setError(error.message);
+        }
+      }
+      function init() {
+        $('#matrix-toolbar').addEventListener('click', event => {
+          const btn = event.target.closest('button[data-op]');
+          if (!btn) return;
+          runOperation(btn.dataset.op);
+        });
+        $('#matrix-run').addEventListener('click', () => runOperation('detA'));
+        ['matrix-a', 'matrix-b', 'matrix-v'].forEach(id => {
+          $(`#${id}`).addEventListener('input', () => runOperation('detA'));
+        });
+        runOperation('detA');
+      }
+      return { init, runOperation };
+    })();
+
     const Router = (() => {
       function init() {
         $('.tab-bar').addEventListener('click', event => {
@@ -3649,9 +3980,31 @@
             lines.push(`FAIL ${expr} threw ${error.message}`);
           }
         });
+        const matrixCases = [
+          { name: 'det', ok: () => Math.abs(MatrixOps.determinant([[1, 2], [3, 4]]) + 2) < 1e-9 },
+          { name: 'transpose', ok: () => JSON.stringify(MatrixOps.transpose([[1, 2, 3], [4, 5, 6]])) === JSON.stringify([[1, 4], [2, 5], [3, 6]]) },
+          { name: 'rank', ok: () => MatrixOps.rank([[1, 2], [2, 4]]) === 1 },
+          { name: 'inverse', ok: () => {
+            const inv = MatrixOps.inverse([[4, 7], [2, 6]]);
+            return Math.abs(inv[0][0] - 0.6) < 1e-9 && Math.abs(inv[1][1] - 0.4) < 1e-9;
+          } },
+          { name: 'solve(A,b)', ok: () => {
+            const x = MatrixOps.solve([[2, 1], [1, 3]], [5, 11]);
+            return Math.abs(x[0] - 0.8) < 1e-9 && Math.abs(x[1] - 3.4) < 1e-9;
+          } }
+        ];
+        matrixCases.forEach(test => {
+          try {
+            const ok = Boolean(test.ok());
+            if (ok) pass += 1;
+            lines.push(`${ok ? 'PASS' : 'FAIL'} matrix ${test.name}`);
+          } catch (error) {
+            lines.push(`FAIL matrix ${test.name} threw ${error.message}`);
+          }
+        });
         const panel = $('#test-panel');
         panel.classList.add('is-visible');
-        panel.textContent = `${pass}/${cases.length} math pipeline tests passed\n${lines.join('\n')}`;
+        panel.textContent = `${pass}/${cases.length + matrixCases.length} math pipeline tests passed\n${lines.join('\n')}`;
         console.log(panel.textContent);
       }
       return { run };
@@ -3662,6 +4015,7 @@
     Graph.init();
     FunctionView.init();
     LogicView.init();
+    MatrixView.init();
     Router.init();
     PWA.init();
     Pipeline.runNow('');
