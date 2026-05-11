@@ -1155,6 +1155,72 @@
       font-family: var(--mono);
     }
 
+    .graph-mode-switch {
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      background: var(--glass-bg);
+      box-shadow: var(--shadow-rest);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    }
+
+    .graph-mode-switch button {
+      min-height: 34px;
+      min-width: 52px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 760;
+    }
+
+    .graph-mode-switch button[aria-pressed="true"] {
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.07);
+    }
+
+    .graph-3d-panel {
+      display: none;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .graph-3d-panel.is-visible {
+      display: grid;
+    }
+
+    .graph-3d-field {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 720;
+    }
+
+    .graph-3d-field input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+      outline: none;
+      font-family: var(--mono);
+    }
+
+    .graph-3d-field input:focus {
+      border-color: rgba(79, 126, 232, 0.5);
+      box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
+    }
+
     .graph-pane {
       min-height: min(68svh, 620px);
       display: grid;
@@ -1405,18 +1471,28 @@
     <section class="view" id="graph-view" aria-label="Graph">
       <aside class="equation-list">
         <div class="panel-title">
-          <h2>Equations</h2>
+          <h2 id="graph-sidebar-title">Equations</h2>
           <button class="icon-btn" type="button" id="add-equation" title="Add equation" aria-label="Add equation">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           </button>
         </div>
+        <div class="graph-mode-switch" id="graph-mode-switch" aria-label="Graph mode">
+          <button type="button" data-graph-mode="2d" aria-pressed="true">2D</button>
+          <button type="button" data-graph-mode="3d" aria-pressed="false">3D</button>
+        </div>
         <div id="equations"></div>
+        <div class="graph-3d-panel" id="graph-3d-panel">
+          <label class="graph-3d-field">
+            <span>z = f(x,y)</span>
+            <input id="surface-expression" value="sin(sqrt(x^2+y^2))" spellcheck="false" autocomplete="off" autocapitalize="off">
+          </label>
+        </div>
       </aside>
 
       <section class="graph-pane">
         <div class="canvas-wrap" id="canvas-wrap">
           <canvas id="plot" aria-label="Function plot"></canvas>
-          <div class="graph-hint">Drag to pan. Wheel or pinch to zoom.</div>
+          <div class="graph-hint" id="graph-hint">Drag to pan. Wheel or pinch to zoom.</div>
         </div>
         <div class="graph-controls">
           <div class="viewport-readout" id="viewport-readout"></div>
@@ -1676,6 +1752,9 @@
           { id: crypto.randomUUID(), expr: 'x^2/4 - 2', color: '#d95d76' }
         ],
         viewport: { xMin: -10, xMax: 10, yMin: -7, yMax: 7 },
+        graphMode: '2d',
+        surfaceExpression: 'sin(sqrt(x^2+y^2))',
+        graph3d: { rotX: -0.72, rotZ: 0.68, zoom: 1 },
         autoGraph: false
       };
       const subscribers = new Map();
@@ -3290,6 +3369,13 @@
           return typeof y === 'boolean' ? Number(y) : y;
         };
       }
+      function compileSurface(expr) {
+        const ast = Parser.parse(expr.replace(/^z\s*=\s*/i, ''));
+        return (x, y) => {
+          const z = Evaluator.evalAst(ast, { x, y });
+          return typeof z === 'boolean' ? Number(z) : z;
+        };
+      }
       function resize() {
         const rect = wrap.getBoundingClientRect();
         const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
@@ -3384,9 +3470,137 @@
           ctx.fillText(`${item.kind === 'zero' ? 'x' : 'v'} ${formatNumber(item.x)}, ${formatNumber(item.y)}`, p.x + 7, p.y - 7);
         });
       }
+      function rotate3d(point, state) {
+        const cz = Math.cos(state.rotZ);
+        const sz = Math.sin(state.rotZ);
+        const cx = Math.cos(state.rotX);
+        const sx = Math.sin(state.rotX);
+        const xz = point.x * cz - point.y * sz;
+        const yz = point.x * sz + point.y * cz;
+        return {
+          x: xz,
+          y: yz * cx - point.z * sx,
+          z: yz * sx + point.z * cx
+        };
+      }
+      function project3d(point, rect, scale) {
+        const depth = 24;
+        const perspective = depth / (depth + point.z);
+        return {
+          x: rect.width / 2 + point.x * scale * perspective,
+          y: rect.height / 2 - point.y * scale * perspective,
+          depth: point.z
+        };
+      }
+      function draw3dGrid(rect, state, scale) {
+        ctx.strokeStyle = 'rgba(29,35,42,0.11)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = -10; i <= 10; i += 2) {
+          const a = project3d(rotate3d({ x: -10, y: i, z: 0 }, state), rect, scale);
+          const b = project3d(rotate3d({ x: 10, y: i, z: 0 }, state), rect, scale);
+          const c = project3d(rotate3d({ x: i, y: -10, z: 0 }, state), rect, scale);
+          const d = project3d(rotate3d({ x: i, y: 10, z: 0 }, state), rect, scale);
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.moveTo(c.x, c.y);
+          ctx.lineTo(d.x, d.y);
+        }
+        ctx.stroke();
+        const axes = [
+          { color: '#d95d76', from: { x: -10, y: 0, z: 0 }, to: { x: 10, y: 0, z: 0 }, label: 'x' },
+          { color: '#5e9446', from: { x: 0, y: -10, z: 0 }, to: { x: 0, y: 10, z: 0 }, label: 'y' },
+          { color: '#4f7ee8', from: { x: 0, y: 0, z: -6 }, to: { x: 0, y: 0, z: 6 }, label: 'z' }
+        ];
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+        axes.forEach(axis => {
+          const from = project3d(rotate3d(axis.from, state), rect, scale);
+          const to = project3d(rotate3d(axis.to, state), rect, scale);
+          ctx.strokeStyle = axis.color;
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(from.x, from.y);
+          ctx.lineTo(to.x, to.y);
+          ctx.stroke();
+          ctx.fillStyle = axis.color;
+          ctx.fillText(axis.label, to.x + 6, to.y - 6);
+        });
+      }
+      function draw3dSurface(rect) {
+        const state = Store.get('graph3d');
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        ctx.fillStyle = 'rgba(255,255,255,0.24)';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        const scale = Math.min(rect.width, rect.height) / 26 * state.zoom;
+        draw3dGrid(rect, state, scale);
+        let fn;
+        try {
+          fn = compileSurface(Store.get('surfaceExpression'));
+        } catch (error) {
+          $('#viewport-readout').textContent = `3D error: ${error.message}`;
+          return;
+        }
+        const range = 8;
+        const steps = 38;
+        const points = [];
+        let minZ = Infinity;
+        let maxZ = -Infinity;
+        for (let yi = 0; yi <= steps; yi += 1) {
+          const row = [];
+          const y = -range + yi * (2 * range / steps);
+          for (let xi = 0; xi <= steps; xi += 1) {
+            const x = -range + xi * (2 * range / steps);
+            let z;
+            try {
+              z = fn(x, y);
+            } catch {
+              z = NaN;
+            }
+            if (Number.isFinite(z)) {
+              z = Math.max(-10, Math.min(10, z));
+              minZ = Math.min(minZ, z);
+              maxZ = Math.max(maxZ, z);
+            }
+            row.push(Number.isFinite(z) ? { x, y, z } : null);
+          }
+          points.push(row);
+        }
+        const lines = [];
+        for (let y = 0; y <= steps; y += 1) {
+          for (let x = 0; x < steps; x += 1) {
+            if (points[y][x] && points[y][x + 1]) lines.push([points[y][x], points[y][x + 1]]);
+          }
+        }
+        for (let x = 0; x <= steps; x += 1) {
+          for (let y = 0; y < steps; y += 1) {
+            if (points[y][x] && points[y + 1][x]) lines.push([points[y][x], points[y + 1][x]]);
+          }
+        }
+        lines
+          .map(([a, b]) => {
+            const ar = rotate3d(a, state);
+            const br = rotate3d(b, state);
+            return { a: project3d(ar, rect, scale), b: project3d(br, rect, scale), depth: (ar.z + br.z) / 2, z: (a.z + b.z) / 2 };
+          })
+          .sort((left, right) => left.depth - right.depth)
+          .forEach(line => {
+            const t = Number.isFinite(minZ) && maxZ > minZ ? (line.z - minZ) / (maxZ - minZ) : 0.5;
+            ctx.strokeStyle = `rgba(${Math.round(79 + 120 * t)}, ${Math.round(126 + 55 * (1 - t))}, ${Math.round(232 - 70 * t)}, 0.72)`;
+            ctx.lineWidth = 1.15;
+            ctx.beginPath();
+            ctx.moveTo(line.a.x, line.a.y);
+            ctx.lineTo(line.b.x, line.b.y);
+            ctx.stroke();
+          });
+        $('#viewport-readout').textContent = `3D x/y -8..8  z ${Number.isFinite(minZ) ? formatNumber(minZ) : '?'}..${Number.isFinite(maxZ) ? formatNumber(maxZ) : '?'}  drag rotate, wheel zoom`;
+      }
       function draw() {
         raf = 0;
         const rect = wrap.getBoundingClientRect();
+        if (Store.get('graphMode') === '3d') {
+          draw3dSurface(rect);
+          return;
+        }
         const vp = Store.get('viewport');
         drawGrid(rect, vp);
         Store.get('equations').forEach(eq => {
@@ -3446,6 +3660,17 @@
           host.append(row);
         });
       }
+      function syncGraphMode(mode) {
+        $$('#graph-mode-switch button').forEach(button => {
+          button.setAttribute('aria-pressed', String(button.dataset.graphMode === mode));
+        });
+        $('#equations').style.display = mode === '2d' ? '' : 'none';
+        $('#add-equation').style.display = mode === '2d' ? '' : 'none';
+        $('#graph-sidebar-title').textContent = mode === '3d' ? 'Surface' : 'Equations';
+        $('#graph-3d-panel').classList.toggle('is-visible', mode === '3d');
+        $('#graph-hint').textContent = mode === '3d' ? 'Drag to rotate. Wheel or pinch to zoom.' : 'Drag to pan. Wheel or pinch to zoom.';
+        schedule();
+      }
       function updateEquationInputs() {
         $$('#equations input[data-equation-id]').forEach(input => {
           if (document.activeElement === input) return;
@@ -3485,13 +3710,30 @@
         });
         Store.subscribe('expression', syncCalculatorExpression);
         Store.subscribe('viewport', schedule);
+        Store.subscribe('graphMode', syncGraphMode);
+        Store.subscribe('surfaceExpression', schedule);
+        Store.subscribe('graph3d', schedule);
+        $('#graph-mode-switch').addEventListener('click', event => {
+          const btn = event.target.closest('button[data-graph-mode]');
+          if (!btn) return;
+          Store.set('graphMode', btn.dataset.graphMode);
+        });
+        $('#surface-expression').addEventListener('input', event => Store.set('surfaceExpression', event.target.value));
         $('#add-equation').addEventListener('click', () => {
           const equations = Store.get('equations');
           Store.set('equations', [...equations, { id: crypto.randomUUID(), expr: 'cos(x)', color: palette[equations.length % palette.length] }]);
         });
-        $('#fit-graph').addEventListener('click', () => Store.set('viewport', { xMin: -10, xMax: 10, yMin: -7, yMax: 7 }));
+        $('#fit-graph').addEventListener('click', () => {
+          Store.set('viewport', { xMin: -10, xMax: 10, yMin: -7, yMax: 7 });
+          Store.set('graph3d', { rotX: -0.72, rotZ: 0.68, zoom: 1 });
+        });
         wrap.addEventListener('wheel', event => {
           event.preventDefault();
+          if (Store.get('graphMode') === '3d') {
+            const state = Store.get('graph3d');
+            Store.set('graph3d', { ...state, zoom: Math.max(0.45, Math.min(2.4, state.zoom * (event.deltaY > 0 ? 0.9 : 1.1))) });
+            return;
+          }
           zoomAt(event.clientX, event.clientY, event.deltaY > 0 ? 1.14 : 0.88);
         }, { passive: false });
         wrap.addEventListener('pointerdown', event => {
@@ -3507,6 +3749,23 @@
           if (!pointers.has(event.pointerId) || !gesture) return;
           const old = pointers.get(event.pointerId);
           pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (Store.get('graphMode') === '3d') {
+            if (gesture.mode === 'pan' && pointers.size === 1) {
+              const state = Store.get('graph3d');
+              Store.set('graph3d', {
+                ...state,
+                rotZ: state.rotZ + (event.clientX - old.x) * 0.01,
+                rotX: Math.max(-1.45, Math.min(1.45, state.rotX + (event.clientY - old.y) * 0.01))
+              });
+            } else if (gesture.mode === 'pinch' && pointers.size === 2) {
+              const pts = [...pointers.values()];
+              const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+              const state = Store.get('graph3d');
+              Store.set('graph3d', { ...state, zoom: Math.max(0.45, Math.min(2.4, state.zoom * dist / Math.max(gesture.dist, 1))) });
+              gesture.dist = dist;
+            }
+            return;
+          }
           if (gesture.mode === 'pan' && pointers.size === 1) {
             panBy(event.clientX - old.x, event.clientY - old.y);
           } else if (gesture.mode === 'pinch' && pointers.size === 2) {
