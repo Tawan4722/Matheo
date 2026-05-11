@@ -16,9 +16,13 @@
       --ink: #1d232a;
       --muted: #65717c;
       --line: rgba(29, 35, 42, 0.1);
-      --glass-bg: rgba(255, 255, 255, 0.68);
+      --glass-bg: rgba(255, 255, 255, 0.58);
       --glass-solid: #ffffff;
       --glass-border: rgba(29, 35, 42, 0.08);
+      --button-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.36));
+      --button-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.44));
+      --button-glass-border: rgba(255, 255, 255, 0.48);
+      --button-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 8px 22px rgba(29, 35, 42, 0.07);
       --shadow-rest: 0 1px 2px rgba(29, 35, 42, 0.04), 0 10px 30px rgba(29, 35, 42, 0.08);
       --shadow-hover: 0 2px 4px rgba(29, 35, 42, 0.06), 0 16px 36px rgba(29, 35, 42, 0.1);
       --shadow-press: inset 0 1px 2px rgba(29, 35, 42, 0.14);
@@ -110,8 +114,8 @@
       border: 1px solid var(--glass-border);
       border-radius: var(--radius);
       box-shadow: var(--shadow-rest);
-      backdrop-filter: blur(20px) saturate(1.35);
-      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+      backdrop-filter: blur(28px) saturate(1.7);
+      -webkit-backdrop-filter: blur(28px) saturate(1.7);
     }
 
     .tab-bar,
@@ -120,6 +124,7 @@
       grid-auto-flow: column;
       gap: 4px;
       padding: 4px;
+      border-radius: 22px;
     }
 
     .tab,
@@ -127,26 +132,67 @@
     .icon-btn,
     .key,
     .command-btn {
+      position: relative;
+      isolation: isolate;
       min-height: 42px;
-      border-radius: var(--radius-sm);
-      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--button-glass-border);
+      background: var(--button-glass);
+      box-shadow: var(--button-glass-shadow);
+      background-clip: padding-box;
+      backdrop-filter: blur(24px) saturate(1.45);
+      -webkit-backdrop-filter: blur(24px) saturate(1.45);
+      transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease, background 160ms ease, border-color 160ms ease, filter 160ms ease;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab::before,
+    .segmented button::before,
+    .icon-btn::before,
+    .key::before,
+    .command-btn::before,
+    .variable-popover button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 48%);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .tab::after,
+    .segmented button::after,
+    .icon-btn::after,
+    .key::after,
+    .command-btn::after,
+    .variable-popover button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: auto;
+      height: auto;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 54%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
     }
 
     .tab,
     .segmented button {
       min-width: 82px;
       padding: 0 14px;
-      background: transparent;
       color: var(--muted);
       font-weight: 700;
     }
 
     .tab[aria-selected="true"],
     .segmented button[aria-pressed="true"] {
-      background: #fff;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.48));
       color: var(--ink);
-      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.07);
+      border-color: rgba(255, 255, 255, 0.62);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56), 0 8px 20px rgba(29, 35, 42, 0.07);
     }
 
     .install-area {
@@ -154,6 +200,7 @@
       min-height: 42px;
       align-items: center;
       padding: 0 10px;
+      border-radius: 22px;
     }
 
     .install-area.is-visible {
@@ -167,10 +214,7 @@
       justify-content: center;
       gap: 8px;
       padding: 0 12px;
-      background: #fff;
       color: var(--ink);
-      border: 1px solid var(--line);
-      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.05);
       font-weight: 720;
     }
 
@@ -620,17 +664,15 @@
 
     .key-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
     }
 
     .key {
       min-width: 0;
       min-height: 52px;
+      border-radius: 18px;
       padding: 0 6px;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 1px 2px rgba(29, 35, 42, 0.04);
       font-size: clamp(0.92rem, 3.7vw, 1.06rem);
       font-weight: 750;
       overflow-wrap: anywhere;
@@ -638,20 +680,26 @@
 
     .key.operator {
       color: var(--blue);
-      background: rgba(255, 255, 255, 0.86);
+      background: linear-gradient(180deg, rgba(246, 250, 255, 0.68), rgba(218, 232, 255, 0.4));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 8px 22px rgba(79, 126, 232, 0.07);
     }
 
     .key.action {
       color: #fff;
-      background: #1d232a;
+      border-color: rgba(255, 255, 255, 0.28);
+      background: linear-gradient(180deg, rgba(45, 54, 66, 0.78), rgba(17, 22, 28, 0.62));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 12px 26px rgba(29, 35, 42, 0.16);
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.26);
     }
 
     .key.function {
       color: var(--rose);
+      background: linear-gradient(180deg, rgba(255, 249, 251, 0.68), rgba(255, 224, 232, 0.4));
     }
 
     .key.constant {
       color: var(--green);
+      background: linear-gradient(180deg, rgba(250, 255, 246, 0.68), rgba(225, 244, 210, 0.4));
     }
 
     .variable-popover {
@@ -677,26 +725,78 @@
     }
 
     .variable-popover button {
+      position: relative;
+      isolation: isolate;
       min-height: 38px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.86);
-      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--button-glass);
+      border: 1px solid var(--button-glass-border);
       color: var(--ink);
+      box-shadow: var(--button-glass-shadow);
+      backdrop-filter: blur(24px) saturate(1.45);
+      -webkit-backdrop-filter: blur(24px) saturate(1.45);
       font-weight: 760;
+      transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
     }
 
+    .tab:hover,
+    .segmented button:hover,
     .key:hover,
     .icon-btn:hover,
-    .command-btn:hover {
+    .command-btn:hover,
+    .variable-popover button:hover {
       transform: translateY(-1px);
-      box-shadow: var(--shadow-hover);
+      background: var(--button-glass-hover);
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52), var(--shadow-hover);
+      filter: saturate(1.03);
     }
 
+    .key.operator:hover {
+      background: linear-gradient(180deg, rgba(251, 253, 255, 0.78), rgba(220, 234, 255, 0.48));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52), var(--shadow-hover);
+    }
+
+    .key.action:hover {
+      background: linear-gradient(180deg, rgba(57, 68, 82, 0.82), rgba(20, 25, 32, 0.66));
+      border-color: rgba(255, 255, 255, 0.32);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 14px 30px rgba(29, 35, 42, 0.18);
+    }
+
+    .key.function:hover {
+      background: linear-gradient(180deg, rgba(255, 252, 253, 0.78), rgba(255, 229, 236, 0.48));
+    }
+
+    .key.constant:hover {
+      background: linear-gradient(180deg, rgba(252, 255, 249, 0.78), rgba(229, 246, 216, 0.48));
+    }
+
+    .tab[aria-selected="true"]:hover,
+    .segmented button[aria-pressed="true"]:hover {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.54));
+      border-color: rgba(255, 255, 255, 0.68);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58), var(--shadow-hover);
+    }
+
+    .tab:hover::after,
+    .segmented button:hover::after,
+    .key:hover::after,
+    .icon-btn:hover::after,
+    .command-btn:hover::after,
+    .variable-popover button:hover::after {
+      opacity: 1;
+    }
+
+    .tab:active,
+    .segmented button:active,
     .key:active,
     .icon-btn:active,
-    .command-btn:active {
-      transform: translateY(0);
-      box-shadow: var(--shadow-press);
+    .command-btn:active,
+    .variable-popover button:active {
+      transform: translateY(1px) scale(0.985);
+      box-shadow: var(--shadow-press), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -8px 18px rgba(29, 35, 42, 0.06);
+      filter: saturate(0.96);
     }
 
     #graph-view {
@@ -854,23 +954,74 @@
 
     .matrix-block {
       display: grid;
+      align-content: start;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .matrix-block-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-weight: 760;
+    }
+
+    .matrix-size {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 680;
+    }
+
+    .matrix-size input {
+      width: 54px;
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 0 6px;
+      outline: none;
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 740;
+      text-align: center;
+    }
+
+    .matrix-editor {
+      display: grid;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .matrix-editor-row {
+      display: grid;
       gap: 6px;
     }
 
-    .matrix-block textarea {
-      width: 100%;
-      min-height: 110px;
+    .matrix-cell-input {
+      width: 72px;
+      min-width: 0;
+      height: 42px;
       border: 1px solid var(--line);
       border-radius: var(--radius-sm);
-      padding: 10px 11px;
-      resize: vertical;
+      padding: 0 8px;
       outline: none;
       background: rgba(255, 255, 255, 0.76);
-      font-family: var(--mono);
       color: var(--ink);
+      font-family: var(--mono);
+      text-align: center;
     }
 
-    .matrix-block textarea:focus {
+    .matrix-size input:focus,
+    .matrix-cell-input:focus {
       border-color: rgba(79, 126, 232, 0.5);
       box-shadow: 0 0 0 3px rgba(79, 126, 232, 0.12);
     }
@@ -1140,6 +1291,7 @@
       }
 
       .key-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 7px;
       }
 
@@ -1391,20 +1543,37 @@
           </div>
         </div>
         <div class="matrix-grid">
-          <label class="matrix-block">
-            <span>A</span>
-            <textarea id="matrix-a" spellcheck="false" autocomplete="off" autocapitalize="off">[[1,2],[3,4]]</textarea>
-          </label>
-          <label class="matrix-block">
-            <span>B</span>
-            <textarea id="matrix-b" spellcheck="false" autocomplete="off" autocapitalize="off">[[2,0],[1,2]]</textarea>
-          </label>
-          <label class="matrix-block">
-            <span>b (vector)</span>
-            <textarea id="matrix-v" spellcheck="false" autocomplete="off" autocapitalize="off">[5,11]</textarea>
-          </label>
+          <section class="matrix-block" aria-labelledby="matrix-a-title">
+            <div class="matrix-block-head">
+              <span id="matrix-a-title">A</span>
+              <div class="matrix-size">
+                <label>Rows <input id="matrix-a-rows" type="number" min="1" max="6" value="2" inputmode="numeric"></label>
+                <label>Cols <input id="matrix-a-cols" type="number" min="1" max="6" value="2" inputmode="numeric"></label>
+              </div>
+            </div>
+            <div class="matrix-editor" id="matrix-a-grid" data-matrix="a"></div>
+          </section>
+          <section class="matrix-block" aria-labelledby="matrix-b-title">
+            <div class="matrix-block-head">
+              <span id="matrix-b-title">B</span>
+              <div class="matrix-size">
+                <label>Rows <input id="matrix-b-rows" type="number" min="1" max="6" value="2" inputmode="numeric"></label>
+                <label>Cols <input id="matrix-b-cols" type="number" min="1" max="6" value="2" inputmode="numeric"></label>
+              </div>
+            </div>
+            <div class="matrix-editor" id="matrix-b-grid" data-matrix="b"></div>
+          </section>
+          <section class="matrix-block" aria-labelledby="matrix-v-title">
+            <div class="matrix-block-head">
+              <span id="matrix-v-title">b vector</span>
+              <div class="matrix-size">
+                <label>Rows <input id="matrix-v-rows" type="number" min="1" max="6" value="2" inputmode="numeric"></label>
+              </div>
+            </div>
+            <div class="matrix-editor" id="matrix-v-grid" data-matrix="v"></div>
+          </section>
         </div>
-        <div class="matrix-hint">Use JSON-like syntax, for example `[[1,2],[3,4]]` and `[5,11]`.</div>
+        <div class="matrix-hint">Set rows and columns, then enter numbers or expressions like 1/2 and sqrt(2) in each cell.</div>
         <div class="matrix-toolbar" id="matrix-toolbar">
           <button class="logic-token" type="button" data-op="detA">det(A)</button>
           <button class="logic-token" type="button" data-op="invA">inv(A)</button>
@@ -2018,7 +2187,14 @@
         if (Math.abs(value.im) < 1e-9) return { type: 'num', value: clean(value.re) };
         return { type: 'complex', re: clean(value.re), im: clean(value.im) };
       };
-      const solution = value => ({ type: 'bin', op: '==', left: { type: 'var', name: 'x' }, right: valueNode(value) });
+      const solutionSet = (roots, options = {}) => ({
+        type: 'solutions',
+        variable: 'x',
+        roots: roots.map(valueNode),
+        kind: options.kind || 'finite',
+        approximate: Boolean(options.approximate),
+        range: options.range || null
+      });
       const cAdd = (a, b) => complexValue(a.re + b.re, a.im + b.im);
       const cSub = (a, b) => complexValue(a.re - b.re, a.im - b.im);
       const cMul = (a, b) => complexValue(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
@@ -2147,13 +2323,27 @@
         }
         return durandKerner(trimmed);
       }
+      function sameRoot(a, b) {
+        const left = typeof a === 'number' ? complexValue(a, 0) : a;
+        const right = typeof b === 'number' ? complexValue(b, 0) : b;
+        return Math.hypot(left.re - right.re, left.im - right.im) < 1e-7;
+      }
+      function uniqueRoots(roots) {
+        const out = [];
+        roots.forEach(root => {
+          const normalized = typeof root === 'number' ? complexValue(root, 0) : complexValue(root.re, root.im);
+          if (!out.some(item => sameRoot(item, normalized))) out.push(normalized);
+        });
+        return out.sort((a, b) => a.re - b.re || a.im - b.im);
+      }
       function polynomialSolve(ast) {
         const left = polyFromAst(ast.left);
         const right = polyFromAst(ast.right);
         if (!left || !right) return null;
         const poly = subPoly(left, right);
+        if (poly.length === 1) return Math.abs(poly[0]) < 1e-10 ? { kind: 'allReal' } : { kind: 'none' };
         const roots = polynomialRoots(poly);
-        return roots.length ? roots : null;
+        return roots.length ? { kind: 'finite', roots: uniqueRoots(roots) } : { kind: 'none' };
       }
       function residual(ast, x) {
         return Evaluator.evalAst(ast.left, { x }) - Evaluator.evalAst(ast.right, { x });
@@ -2184,7 +2374,7 @@
       }
       function scan(ast, span) {
         const roots = [];
-        const steps = 1000;
+        const steps = Math.min(20000, Math.max(1600, Math.ceil(span * 160)));
         let prevX = -span;
         let prevY;
         try {
@@ -2212,20 +2402,19 @@
         }
         return roots;
       }
-      function toAst(roots) {
-        const normalized = roots.map(value => typeof value === 'number' ? complexValue(value, 0) : value);
-        const sorted = normalized.sort((a, b) => a.re - b.re || a.im - b.im);
-        return sorted.map(solution).reduce((left, right) => left ? { type: 'bin', op: 'or', left, right } : right, null);
-      }
       function solve(ast) {
         if (!ast || ast.type !== 'bin' || ast.op !== '==') return null;
         if (!containsVar(ast)) return null;
         if (hasOtherVar(ast)) throw new Error('Equation solver supports x only');
-        const polynomialRoots = polynomialSolve(ast);
-        if (polynomialRoots) return { result: toAst(polynomialRoots), roots: polynomialRoots };
+        const polynomial = polynomialSolve(ast);
+        if (polynomial) {
+          if (polynomial.kind === 'allReal') return { result: solutionSet([], { kind: 'allReal' }), roots: [] };
+          if (polynomial.kind === 'none') return { result: solutionSet([], { kind: 'none' }), roots: [] };
+          return { result: solutionSet(polynomial.roots), roots: polynomial.roots };
+        }
         for (const span of [10, 100, 1000]) {
-          const roots = scan(ast, span);
-          if (roots.length) return { result: toAst(roots), roots };
+          const roots = uniqueRoots(scan(ast, span));
+          if (roots.length) return { result: solutionSet(roots, { approximate: true, range: [-span, span] }), roots };
         }
         throw new Error('No real x solution found');
       }
@@ -2437,6 +2626,18 @@
           case 'bool': return el('span', 'cell', ast.value ? 'true' : 'false');
           case 'var': return el('span', 'cell', ast.name);
           case 'complex': return el('span', 'cell', complexText(ast));
+          case 'solutions': {
+            if (ast.kind === 'allReal') return el('span', 'cell', 'All real x');
+            if (ast.kind === 'none') return el('span', 'cell', 'No solution');
+            const row = el('span', 'math-row');
+            if (ast.approximate) row.append(el('span', 'cell', 'approx.'));
+            ast.roots.forEach((root, index) => {
+              if (index) row.append(el('span', 'op-cell', 'or'));
+              row.append(el('span', 'cell', ast.variable), el('span', 'op-cell', '='), render(root));
+            });
+            if (ast.range) row.append(el('span', 'cell', `on [${formatNumber(ast.range[0])}, ${formatNumber(ast.range[1])}]`));
+            return row;
+          }
           case 'const': return el('span', 'cell', ast.name === 'pi' ? 'π' : 'e');
           case 'infinity': return el('span', 'cell', '∞');
           case 'unary': return wrap([el('span', 'op-cell', displayOp(ast.op)), render(ast.value)]);
@@ -2505,6 +2706,10 @@
           case 'bool': return ast.value ? 'true' : 'false';
           case 'var': return ast.name;
           case 'complex': return complexText(ast);
+          case 'solutions':
+            if (ast.kind === 'allReal') return 'All real x';
+            if (ast.kind === 'none') return 'No solution';
+            return `${ast.approximate ? 'approx. ' : ''}${ast.roots.map(root => `${ast.variable} = ${toText(root)}`).join(' or ')}${ast.range ? ` on [${formatNumber(ast.range[0])}, ${formatNumber(ast.range[1])}]` : ''}`;
           case 'const': return ast.name === 'pi' ? 'π' : 'e';
           case 'infinity': return '∞';
           case 'unary': return `${displayOp(ast.op)}${toText(ast.value)}`;
@@ -2569,7 +2774,7 @@
             steps = [...steps, { before: ast, after: result, rule: 'Solve equation for x' }];
             equationSolved = true;
           }
-          const hasVar = JSON.stringify(result).includes('"type":"var"');
+          const hasVar = result?.type === 'solutions' || JSON.stringify(result).includes('"type":"var"');
           let value;
           try {
             value = Evaluator.evalAst(result);
@@ -2592,47 +2797,54 @@
     const Keypad = (() => {
       const layers = {
         basic: [
-          ['7', '8', '9', '(', ')'],
-          ['4', '5', '6', '×', '÷'],
-          ['1', '2', '3', '+', '-'],
-          ['0', '.', 'π', '^', '='],
-          ['C', '⌫', 'x', '√', 'Solve']
+          ['C', '⌫', '(', ')'],
+          ['7', '8', '9', '÷'],
+          ['4', '5', '6', '×'],
+          ['1', '2', '3', '-'],
+          ['0', '.', 'x', '+'],
+          ['π', '√', '=', 'Solve']
         ],
         intermediate: [
-          ['sin', 'cos', 'tan', 'log', 'ln'],
-          ['asin', 'acos', 'atan', 'abs', 'e'],
-          ['x²', 'x³', '1/x', 'nCr', 'nPr'],
-          ['(', ')', ',', '+', '-'],
-          ['C', '⌫', '×', '÷', 'Solve']
+          ['C', '⌫', '(', ')'],
+          ['sin', 'cos', 'tan', 'ln'],
+          ['log', 'asin', 'acos', 'atan'],
+          ['x²', 'x³', 'x^n', '1/x'],
+          ['nCr', 'nPr', 'abs', 'e'],
+          ['+', '-', '×', '÷'],
+          [',', '=', 'x', 'Solve']
         ],
         advanced: [
-          ['a/b', 'x^n', 'ⁿ√', 'sqrt(', 'root('],
-          ['abs(', 'floor(', 'ceil(', 'sec(', 'csc('],
-          ['tanh(', 'exp(', 'min(', 'max(', 'round('],
-          ['x', ',', '(', ')', '!'],
-          ['C', '⌫', 'Next', '=', 'Solve']
+          ['C', '⌫', 'Next', 'Solve'],
+          ['a/b', 'x^n', 'ⁿ√', 'sqrt('],
+          ['root(', 'abs(', 'floor(', 'ceil('],
+          ['min(', 'max(', 'round(', 'exp('],
+          ['sec(', 'csc(', 'tanh(', '!'],
+          ['x', ',', '(', ')']
         ],
         calculus: [
-          ['d/dx', '∫', 'lim', '∫a→b', 'lim→a'],
-          ['sin', 'cos', 'tan', 'ln', 'e'],
-          ['a/b', 'x^n', 'ⁿ√', 'x', 'π'],
-          [',', '+', '-', '*', '/'],
-          ['C', '⌫', 'Next', '=', 'Solve']
+          ['C', '⌫', 'Next', 'Solve'],
+          ['d/dx', '∫', 'lim', '∫a→b'],
+          ['lim→a', 'sin', 'cos', 'tan'],
+          ['a/b', 'x^n', 'ⁿ√', 'ln'],
+          ['x', 'π', 'e', ','],
+          ['+', '-', '×', '÷']
         ],
         logic: [
-          ['true', 'false', '∧', '∨', '¬'],
-          ['>', '<', '≥', '≤', '≡'],
-          ['≠', '(', ')', 'x', '0'],
-          ['1', '2', '3', '+', '-'],
-          ['C', '⌫', 'Graph', '=', 'Solve']
+          ['C', '⌫', 'Graph', 'Solve'],
+          ['true', 'false', '∧', '∨'],
+          ['¬', '>', '<', '≡'],
+          ['≠', '≥', '≤', '='],
+          ['(', ')', 'x', '0'],
+          ['1', '2', '3', '-']
         ]
       };
       layers.symbols = [
-        ['π', 'e', '∞', 'θ', 'φ'],
-        ['α', 'β', 'γ', 'δ', 'λ'],
-        ['μ', 'σ', 'ω', '√', '|x|'],
-        ['x²', 'x³', '1/x', 'nCr', 'nPr'],
-        ['C', '⌫', '×', '÷', 'Solve']
+        ['C', '⌫', '(', ')'],
+        ['π', 'e', '∞', 'x'],
+        ['θ', 'φ', 'α', 'β'],
+        ['γ', 'δ', 'λ', 'μ'],
+        ['σ', 'ω', '√', '|x|'],
+        ['x²', 'x³', '1/x', 'Solve']
       ];
       const tokenMap = {
         '×': '*', '÷': '/', 'π': 'pi', '√': 'sqrt()', '∞': 'Infinity',
@@ -3769,22 +3981,95 @@
     })();
 
     const MatrixView = (() => {
-      const parseLiteral = (source, label) => {
-        try {
-          return JSON.parse(source.trim());
-        } catch {
-          throw new Error(`Invalid ${label} literal`);
-        }
+      const defaults = {
+        a: [[1, 2], [3, 4]],
+        b: [[2, 0], [1, 2]],
+        v: [[5], [11]]
       };
+      const clampSize = value => Math.max(1, Math.min(6, Number.parseInt(value, 10) || 1));
+      const matrixState = clone(defaults);
+      function cellValue(text, label) {
+        const source = text.trim();
+        if (!source) return 0;
+        try {
+          const ast = Parser.parse(source);
+          const value = Evaluator.evalAst(ast);
+          if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error();
+          return value;
+        } catch {
+          throw new Error(`Invalid value in ${label}`);
+        }
+      }
+      function getDims(name) {
+        if (name === 'v') return { rows: clampSize($('#matrix-v-rows').value), cols: 1 };
+        return {
+          rows: clampSize($(`#matrix-${name}-rows`).value),
+          cols: clampSize($(`#matrix-${name}-cols`).value)
+        };
+      }
+      function syncSizeInputs(name, rows, cols) {
+        $(`#matrix-${name}-rows`).value = String(rows);
+        if (name !== 'v') $(`#matrix-${name}-cols`).value = String(cols);
+      }
+      function resizeState(name) {
+        const { rows, cols } = getDims(name);
+        syncSizeInputs(name, rows, cols);
+        const current = matrixState[name] || [];
+        matrixState[name] = Array.from({ length: rows }, (_, row) =>
+          Array.from({ length: cols }, (_, col) => current[row]?.[col] ?? 0)
+        );
+      }
+      function renderEditor(name) {
+        resizeState(name);
+        const grid = $(`#matrix-${name}-grid`);
+        const values = matrixState[name];
+        const cols = values[0]?.length || 1;
+        grid.replaceChildren();
+        values.forEach((row, rowIndex) => {
+          const rowEl = document.createElement('div');
+          rowEl.className = 'matrix-editor-row';
+          rowEl.style.gridTemplateColumns = `repeat(${cols}, minmax(64px, 72px))`;
+          row.forEach((value, colIndex) => {
+            const input = document.createElement('input');
+            input.className = 'matrix-cell-input';
+            input.inputMode = 'decimal';
+            input.spellcheck = false;
+            input.autocomplete = 'off';
+            input.value = formatNumber(value);
+            input.dataset.matrix = name;
+            input.dataset.row = String(rowIndex);
+            input.dataset.col = String(colIndex);
+            input.setAttribute('aria-label', `${name === 'v' ? 'b' : name.toUpperCase()} row ${rowIndex + 1} column ${colIndex + 1}`);
+            rowEl.append(input);
+          });
+          grid.append(rowEl);
+        });
+      }
+      function readMatrix(name) {
+        const { rows, cols } = getDims(name);
+        const label = name === 'v' ? 'b' : name.toUpperCase();
+        return Array.from({ length: rows }, (_, row) =>
+          Array.from({ length: cols }, (_, col) => {
+            const input = $(`#matrix-${name}-grid [data-row="${row}"][data-col="${col}"]`);
+            return cellValue(input?.value || '', `${label}[${row + 1},${col + 1}]`);
+          })
+        );
+      }
       const parseInputs = () => {
-        const a = parseLiteral($('#matrix-a').value, 'A');
-        const b = parseLiteral($('#matrix-b').value, 'B');
-        const v = parseLiteral($('#matrix-v').value, 'b');
+        const a = readMatrix('a');
+        const b = readMatrix('b');
+        const v = readMatrix('v').map(row => row[0]);
         MatrixOps.assertMatrix(a, 'A');
         MatrixOps.assertMatrix(b, 'B');
         MatrixOps.assertVector(v);
         return { a, b, v };
       };
+      function syncEditedCell(input) {
+        const { matrix, row, col } = input.dataset;
+        if (!matrixState[matrix]?.[Number(row)]) return;
+        const numeric = Number(input.value);
+        matrixState[matrix][Number(row)][Number(col)] = Number.isFinite(numeric) ? numeric : input.value;
+      }
       const fmt = value => Number.isFinite(value) ? formatNumber(value) : String(value);
       const renderMatrix = matrix => {
         const table = document.createElement('table');
@@ -3843,14 +4128,30 @@
         }
       }
       function init() {
+        ['a', 'b', 'v'].forEach(renderEditor);
         $('#matrix-toolbar').addEventListener('click', event => {
           const btn = event.target.closest('button[data-op]');
           if (!btn) return;
           runOperation(btn.dataset.op);
         });
         $('#matrix-run').addEventListener('click', () => runOperation('detA'));
-        ['matrix-a', 'matrix-b', 'matrix-v'].forEach(id => {
-          $(`#${id}`).addEventListener('input', () => runOperation('detA'));
+        ['a', 'b', 'v'].forEach(name => {
+          const handleResize = () => {
+            renderEditor(name);
+            runOperation('detA');
+          };
+          $(`#matrix-${name}-rows`).addEventListener('input', handleResize);
+          $(`#matrix-${name}-rows`).addEventListener('change', handleResize);
+          if (name !== 'v') {
+            $(`#matrix-${name}-cols`).addEventListener('input', handleResize);
+            $(`#matrix-${name}-cols`).addEventListener('change', handleResize);
+          }
+          $(`#matrix-${name}-grid`).addEventListener('input', event => {
+            const input = event.target.closest('.matrix-cell-input');
+            if (!input) return;
+            syncEditedCell(input);
+            runOperation('detA');
+          });
         });
         runOperation('detA');
       }
@@ -3929,6 +4230,9 @@
         { expr: 'limit((x^2-1)/(x-1),1)', expected: 2 },
         { expr: 'x+2=5', expectedParts: ['x = 3'] },
         { expr: 'x^2=9', expectedParts: ['x = -3', 'x = 3'] },
+        { expr: 'x^2=0', expectedParts: ['x = 0'] },
+        { expr: 'x=x', expectedParts: ['All real x'] },
+        { expr: 'x=x+1', expectedParts: ['No solution'] },
         { expr: 'x^2+1=0', expectedParts: ['x = -i', 'x = i'] },
         { expr: 'x^3-1=0', expectedParts: ['x = 1', '-0.5 +', '-0.5 -', '0.86602540378'] },
         { expr: '2>1 and not false', expected: true },
@@ -3958,7 +4262,7 @@
             let { result } = Simplifier.simplify(ast);
             const solved = EquationSolver.solve(result);
             if (solved) result = solved.result;
-            const symbolic = JSON.stringify(result).includes('"type":"var"') && !scope;
+            const symbolic = (result?.type === 'solutions' || JSON.stringify(result).includes('"type":"var"')) && !scope;
             let value;
             try {
               value = Evaluator.evalAst(result, scope);
